@@ -1,8 +1,8 @@
-"use client";
+import { redis } from "@/lib/redis";
 import React from "react";
 
-const Page = () => {
-  return <div>fdasfdas</div>;
+const Page = async () => {
+  return <div>2</div>;
 };
 
 export default Page;

@@ -1,3 +1,6 @@
+import { fetchRedis } from "@/lib/hepper/redis";
+import { redis } from "@/lib/redis";
+import { UserData } from "@/types/user";
 import { verifyWebhook } from "@clerk/nextjs/webhooks";
 import { NextRequest } from "next/server";
 
@@ -16,12 +19,34 @@ export async function POST(req: NextRequest) {
     console.log("Webhook payload:", evt.data);
 
     if (evt.type === "user.created") {
-      const { id } = evt.data;
+      const {
+        id,
+        email_addresses,
+        first_name,
+        last_name,
+        image_url,
+        username,
+      } = evt.data;
       try {
         console.log(
           `Received webhook with ID ${id} and event type of ${eventType}`
         );
         console.log("Webhook payload:", evt.data);
+
+        // Lưu thông tin user vào Redis
+        const userData: UserData = {
+          id,
+          email: email_addresses?.[0]?.email_address || "",
+          firstName: first_name || "",
+          lastName: last_name || "",
+          imageUrl: image_url || "",
+          username: username || "",
+          createdAt: new Date().toISOString(),
+        };
+
+        await redis.set(`user:${id}`, JSON.stringify(userData));
+        console.log(`User ${id} saved to Redis successfully`);
+
         return new Response("User created successfully", { status: 200 });
       } catch (error) {
         console.error("Error creating user:", error);
@@ -35,10 +60,11 @@ export async function POST(req: NextRequest) {
         if (!id) {
           return new Response("User ID is required", { status: 400 });
         }
-        console.log(
-          `Received webhook with ID ${id} and event type of ${eventType}`
-        );
-        console.log("Webhook payload:", evt.data);
+
+        // Xóa user khỏi Redis
+        await redis.del(`user:${id}`);
+        console.log(`User ${id} deleted from Redis successfully`);
+
         return new Response("User deleted successfully", { status: 200 });
       } catch (error) {
         console.error("Error deleting user:", error);
