@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
           createdAt: new Date().toISOString(),
         };
 
-        await redis.set(`user:${id}`, JSON.stringify(userData));
+        await redis.set(`user:${userData.email}`, JSON.stringify(userData));
         console.log(`User ${id} saved to Redis successfully`);
 
         return new Response("User created successfully", { status: 200 });
