@@ -30,6 +30,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
     // check if user is already added
     const isAlreadyAdded = (await fetchRedis(
       "sismember",
@@ -52,7 +53,11 @@ export async function POST(req: Request) {
     )) as 0 | 1;
 
     if (isAlreadyFriends) {
-      return new Response("Already friends with this user", { status: 400 });
+      // Sửa lại để consistent với format response khác
+      return NextResponse.json(
+        { messages: "Already friends with this user" },
+        { status: 400 }
+      );
     }
 
     // await pusherServer.trigger(

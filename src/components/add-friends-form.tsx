@@ -15,6 +15,7 @@ import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import axios from "axios";
+import { toast } from "sonner";
 
 export default function AddFriendsForm() {
   const formSchema = z.object({
@@ -31,7 +32,14 @@ export default function AddFriendsForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsPending(true);
-      await axios.post("/api/friends/add", values);
+      const response = await axios.post("/api/friends/add", values);
+
+      // Sửa lại phần này - axios luôn có response.data
+      if (response.status === 200) {
+        toast.success(response.data.messages || "Friend added successfully");
+      } else {
+        toast.error(response.data.messages || "Failed to add friend");
+      }
     } catch (error) {
       console.error("Error submitting form:", error);
     } finally {
