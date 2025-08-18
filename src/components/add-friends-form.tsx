@@ -32,13 +32,19 @@ export default function AddFriendsForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsPending(true);
-      const response = await axios.post("/api/friends/add", values);
+      const response = await fetch("/api/friends/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
 
-      // Sửa lại phần này - axios luôn có response.data
-      if (response.status === 200) {
-        toast.success(response.data.messages || "Friend added successfully");
+      const data = await response.json();
+      if (response.status !== 200) {
+        toast.error(data.messages || "Failed to add friend");
       } else {
-        toast.error(response.data.messages || "Failed to add friend");
+        toast.success(data.messages || "Friend added successfully");
       }
     } catch (error) {
       console.error("Error submitting form:", error);

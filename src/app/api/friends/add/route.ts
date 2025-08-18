@@ -53,7 +53,6 @@ export async function POST(req: Request) {
     )) as 0 | 1;
 
     if (isAlreadyFriends) {
-      // Sửa lại để consistent với format response khác
       return NextResponse.json(
         { messages: "Already friends with this user" },
         { status: 400 }

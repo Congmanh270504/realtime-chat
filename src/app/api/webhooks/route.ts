@@ -28,10 +28,6 @@ export async function POST(req: NextRequest) {
         username,
       } = evt.data;
       try {
-        console.log(
-          `Received webhook with ID ${id} and event type of ${eventType}`
-        );
-        console.log("Webhook payload:", evt.data);
 
         // Lưu thông tin user vào Redis
         const userData: UserData = {

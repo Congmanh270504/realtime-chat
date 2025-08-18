@@ -1,5 +1,5 @@
 "use client";
-import { Toaster } from "sonner";
+import { toast, Toaster } from "sonner";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,22 +15,74 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { UserButton } from "@clerk/nextjs";
+import { UserData } from "@/types/user";
+import { useState } from "react";
 
 interface ClientProviderProps {
   children: React.ReactNode;
+  unseenRequestCount: number;
+  friendRequests: UserData[];
+  userFriends: UserData[];
 }
 
-const ClientProvider: React.FC<ClientProviderProps> = ({ children }) => {
-  //   const pathName = usePathname();
-  //   const pathArray = pathName.split("/").slice(1);
-  //   const breadcrumbItems = pathArray.reduce<string[]>((acc, item, index) => {
-  //     const url = `${acc[index - 1] || ""}/${item}`;
-  //     acc.push(url);
-  //     return acc;
-  //   }, []);
-  //   const truncate = (str: string, max = 10) =>
-  //     str.length > max ? `${str.slice(0, max)}...` : str;
+const ClientProvider: React.FC<ClientProviderProps> = ({
+  children,
+  unseenRequestCount,
+  friendRequests,
+  userFriends,
+}) => {
+  const [friendRequestsData, setFriendRequestsData] = useState(friendRequests);
+
+  // Callback functions for friend request actions
+  const handleAcceptFriend = async (friendId: string) => {
+    console.log("Accepting friend request from:", friendId);
+    try {
+      const request = await fetch(`/api/friends/accept`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friendId }),
+      });
+
+      const data = await request.json();
+      if (request.status === 200) {
+        toast.success(data.messages);
+        setFriendRequestsData((prev) =>
+          prev.filter((friend) => friend.id !== friendId)
+        );
+      } else {
+        toast.error(data.messages);
+      }
+    } catch (error) {
+      console.error("Error accepting friend request:", error);
+    }
+  };
+
+  const handleDenyFriend = async (friendId: string) => {
+    try {
+      const request = await fetch(`/api/friends/deny`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friendId }),
+      });
+
+      const data = await request.json();
+      if (request.status === 200) {
+        toast.success(data.messages);
+        setFriendRequestsData((prev) =>
+          prev.filter((friend) => friend.id !== friendId)
+        );
+      } else {
+        toast.error(data.messages);
+      }
+    } catch (error) {
+      console.error("Error denying friend request:", error);
+    }
+  };
+
   return (
     <SidebarProvider
       style={
@@ -39,7 +91,13 @@ const ClientProvider: React.FC<ClientProviderProps> = ({ children }) => {
         } as React.CSSProperties
       }
     >
-      <AppSidebar />
+      <AppSidebar
+        unseenRequestCount={unseenRequestCount}
+        friendRequestsData={friendRequestsData}
+        onAcceptFriend={handleAcceptFriend}
+        onDenyFriend={handleDenyFriend}
+        userFriends={userFriends}
+      />
       <SidebarInset>
         <header className="bg-background sticky top-0 flex shrink-0 items-center gap-2 border-b p-4">
           <SidebarTrigger className="-ml-1" />

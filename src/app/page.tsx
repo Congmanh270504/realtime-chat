@@ -1,5 +1,6 @@
 import AddFriendsForm from "@/components/add-friends-form";
-import { redis } from "@/lib/redis";
+import { fetchRedis } from "@/lib/hepper/redis";
+import { currentUser } from "@clerk/nextjs/server";
 import React from "react";
 
 const Page = async () => {
