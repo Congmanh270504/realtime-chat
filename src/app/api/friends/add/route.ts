@@ -1,5 +1,8 @@
 import { fetchRedis } from "@/lib/hepper/redis";
+import { pusherServer } from "@/lib/pusher";
 import { redis } from "@/lib/redis";
+import { toPusherKey } from "@/lib/utils";
+import { UserData } from "@/types/user";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
@@ -59,14 +62,18 @@ export async function POST(req: Request) {
       );
     }
 
-    // await pusherServer.trigger(
-    //   toPusherKey(`user:${idToAdd}:incoming_friend_requests`),
-    //   "incoming_friend_requests",
-    //   {
-    //     senderId: session.user.id,
-    //     senderEmail: session.user.email,
-    //   }
-    // );
+    await pusherServer.trigger(
+      toPusherKey(`user:${idToAdd}:incoming_friend_requests`),
+      "incoming_friend_requests",
+      {
+        id: user.id,
+        email: user.emailAddresses[0]?.emailAddress,
+        imageUrl: user.imageUrl,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      } as UserData
+    );
 
     await redis.sadd(`user:${idToAdd}:incoming_friend_requests`, user.id);
 

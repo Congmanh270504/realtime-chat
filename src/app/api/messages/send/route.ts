@@ -4,6 +4,8 @@ import { Message, messageValidator } from "@/lib/validation/message";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
+import { toPusherKey } from "@/lib/utils";
+import { pusherClient, pusherServer } from "@/lib/pusher";
 
 export async function POST(request: Request) {
   try {
@@ -14,6 +16,12 @@ export async function POST(request: Request) {
       return NextResponse.json({
         message: "User not authenticated",
         status: 401,
+      });
+    }
+    if (!text) {
+      return NextResponse.json({
+        message: "Text is required",
+        status: 400,
       });
     }
     const [userId1, userId2] = chatId.split("--");
@@ -47,6 +55,13 @@ export async function POST(request: Request) {
       timestamp: Date.now(),
     };
     const message = messageValidator.parse(messageData);
+
+    // notify all clients in the chat
+    pusherServer.trigger(
+      toPusherKey(`chat:${chatId}`),
+      "incoming_message",
+      message
+    );
 
     await redis.zadd(`chat:${chatId}:messages`, {
       score: message.timestamp,

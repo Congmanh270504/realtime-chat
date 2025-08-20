@@ -58,14 +58,12 @@ const Page = async ({ params }: PageProps) => {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <ChatInterface
-        chatId={chatId}
-        initialMessages={initialMessages}
-        currentUser={transferCurrentUser}
-        chatPartner={chatPartner}
-      />
-    </div>
+    <ChatInterface
+      chatId={chatId}
+      initialMessages={initialMessages}
+      currentUser={transferCurrentUser}
+      chatPartner={chatPartner}
+    />
   );
 };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,8 +12,9 @@ import {
   Phone,
   Video,
   Info,
+  Send,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, toPusherKey } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Message } from "@/types/message";
 import { toast } from "sonner";
@@ -23,6 +24,8 @@ import {
   shouldShowTimeDivider,
 } from "@/lib/hepper/format-time";
 import { TimeDivider } from "./time-divider";
+import { pusherClient } from "@/lib/pusher";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ChatInterfaceProps {
   initialMessages: Message[];
@@ -40,33 +43,31 @@ export default function ChatInterface({
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
+  useEffect(() => {
+    pusherClient.subscribe(toPusherKey(`chat:${chatId}`));
+
+    const messageHandler = (data: Message) => {
+      setMessages((prev) => [...prev, data]); // check if message display is wrong order
+    };
+
+    pusherClient.bind("incoming_message", messageHandler);
+
+    return () => {
+      pusherClient.unsubscribe(toPusherKey(`chat:${chatId}`));
+      pusherClient.unbind("incoming_message", messageHandler);
+    };
+  }, [currentUser.id]);
 
   const handleAddMessage = async () => {
-    // if (!input) return;
-
-    // const newMessage: Message = {
-    //   id: Date.now().toString(),
-    //   receiverId: "user-id-2",
-    //   text: input,
-    //   senderId: userId,
-    //   timestamp: 1,
-    // };
-
-    // setMessages((prev) => [...prev, newMessage]);
-    // setInput("");
+    if (!input) return;
     try {
       setIsLoading(true);
-      const response = await fetch("/api/messages/send", {
+      await fetch("/api/messages/send", {
         method: "POST",
         body: JSON.stringify({ text: input, chatId }),
       });
-      const data = await response.json();
-      if (response.status) {
-        toast.success("Message sent successfully");
-      } else {
-        toast.error(data.message || "Failed to send message");
-      }
-      // setMessages((prev) => [...prev, data]);
       setInput("");
     } catch (error) {
       console.error("Error sending message:", error);
@@ -76,11 +77,18 @@ export default function ChatInterface({
   };
 
   return (
-    <div className="flex-1 flex flex-col w-full p-6">
-      <div className="bg-green-100 px-6 py-4 border-b flex items-center justify-between rounded-2xl mb-4">
+    <div className="h-full flex flex-col w-full relative ">
+      {/* head content */}
+      <div className="sticky top-3 right-0 z-10 bg-green-100 px-6 py-4 border-b flex items-center justify-between rounded-2xl mx-6 mt-6 flex-shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8 rounded-lg">
-            <AvatarImage src={chatPartner.imageUrl} alt={"User image"} />
+            <AvatarImage
+              src={
+                chatPartner.imageUrl ||
+                "/placeholder.svg?height=32&width=32&query=user avatar"
+              }
+              alt={"User image"}
+            />
             <AvatarFallback className="rounded-lg">
               {chatPartner.username.slice(0, 2).toUpperCase()}
             </AvatarFallback>
@@ -118,8 +126,8 @@ export default function ChatInterface({
         </div>
       </div>
 
-      <ScrollArea className="flex-1 flex-col-reverse">
-        <div className="space-y-6 w-full">
+      <ScrollArea className="flex-1 px-6 py-4">
+        <div className="space-y-6 w-full px-4 pb-6">
           {messages.map((message, index) => {
             const isCurrentUser = message.senderId === currentUser.id;
             const previousMessage = index > 0 ? messages[index - 1] : undefined;
@@ -127,6 +135,7 @@ export default function ChatInterface({
               message.timestamp,
               previousMessage?.timestamp
             );
+            const isHovered = hoveredMessageId === message.id;
 
             return (
               <div key={`${message.id}-${message.timestamp}`}>
@@ -141,11 +150,14 @@ export default function ChatInterface({
                     "flex w-full",
                     isCurrentUser ? "justify-end" : "justify-start"
                   )}
+                  onMouseEnter={() => setHoveredMessageId(message.id)}
+                  onMouseLeave={() => setHoveredMessageId(null)}
                 >
                   <div
                     className={cn(
-                      "flex gap-3 max-w-[70%]",
-                      isCurrentUser && "flex-row-reverse"
+                      "flex gap-3 ",
+                      isCurrentUser && "flex-row-reverse",
+                      isMobile ? "w-full" : "max-w-[70%]"
                     )}
                   >
                     {!isCurrentUser && (
@@ -165,66 +177,55 @@ export default function ChatInterface({
                         </AvatarFallback>
                       </Avatar>
                     )}
-                    <div className="space-y-2">
-                      <div
-                        className={cn(
-                          "flex items-center gap-2",
-                          isCurrentUser && "flex-row-reverse"
-                        )}
-                      >
-                        <span className="text-sm font-medium">
-                          {isCurrentUser
-                            ? currentUser.username
-                            : chatPartner.username}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {formatTimestamp(message.timestamp)}
-                        </span>
-                      </div>
-                      <div
-                        className={cn(
-                          "p-3 rounded-lg",
-                          !isCurrentUser
-                            ? "bg-muted/50"
-                            : "bg-primary text-primary-foreground"
-                        )}
-                      >
-                        <p className="text-sm whitespace-pre-wrap">
-                          {message.text}
-                        </p>
-                      </div>
-                      {!isCurrentUser && (
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <ThumbsUp className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <ThumbsDown className="h-4 w-4" />
-                          </Button>
+                    <div className="space-y-2 grid grid-cols-2 gap-2 max-sm:grid-cols-1">
+                      <div className={isCurrentUser ? "order-2" : "order-1"}>
+                        <div
+                          className={cn(
+                            "flex items-center gap-2",
+                            isCurrentUser && "flex-row-reverse"
+                          )}
+                        >
+                          <span className="text-sm font-medium">
+                            {isCurrentUser ? null : chatPartner.username}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {formatTimestamp(message.timestamp)}
+                          </span>
                         </div>
-                      )}
+                        <div
+                          className={cn(
+                            "p-3 rounded-lg",
+                            !isCurrentUser
+                              ? "bg-muted/50"
+                              : "bg-primary text-primary-foreground"
+                          )}
+                        >
+                          <p className="text-sm whitespace-pre-wrap">
+                            {message.text}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div
+                        className={cn(
+                          "flex items-center gap-2 mt-4 transition-opacity duration-200",
+                          isCurrentUser ? "order-1" : "order-2",
+                          isHovered ? "opacity-100" : "opacity-0"
+                        )}
+                      >
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <ThumbsUp className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <ThumbsDown className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -233,11 +234,11 @@ export default function ChatInterface({
           })}
         </div>
       </ScrollArea>
-
-      <div className="pt-4 border-t">
+      {/* input chat */}
+      <div className="px-6 py-4 border-t bg-background flex-shrink-0 sticky bottom-0 left-0 right-0">
         <div className="flex gap-2 items-center">
           <Textarea
-            placeholder="Type a message as a customer"
+            placeholder="Type a message"
             value={input}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -253,7 +254,7 @@ export default function ChatInterface({
             onClick={handleAddMessage}
             disabled={isLoading}
           >
-            {isLoading ? "Sending..." : "Send"}
+            {isLoading ? "Sending..." : <Send />}
           </Button>
         </div>
       </div>

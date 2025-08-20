@@ -65,6 +65,7 @@ export default async function RootLayout({
             unseenRequestCount={unseenRequests.length}
             friendRequests={friendRequests}
             initialFriends={initialFriends}
+            userId={user.id}
           >
             {children}
           </ClientProvider>

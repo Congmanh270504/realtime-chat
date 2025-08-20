@@ -16,13 +16,16 @@ import {
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { UserData } from "@/types/user";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { pusherClient } from "@/lib/pusher";
+import { toPusherKey } from "@/lib/utils";
 
 interface ClientProviderProps {
   children: React.ReactNode;
   unseenRequestCount: number;
   friendRequests: UserData[];
   initialFriends: UserData[];
+  userId: string;
 }
 
 const ClientProvider: React.FC<ClientProviderProps> = ({
@@ -30,12 +33,49 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
   unseenRequestCount,
   friendRequests,
   initialFriends,
+  userId,
 }) => {
   const [friendRequestsData, setFriendRequestsData] = useState(friendRequests);
+  const [requestCount, setRequestCount] = useState(unseenRequestCount);
+
+  // count request add friends data
+  useEffect(() => {
+    pusherClient.subscribe(
+      toPusherKey(`user:${userId}:incoming_friend_requests`)
+    );
+    const friendRequestHandler = () => {
+      setRequestCount((prev) => prev + 1);
+    };
+    pusherClient.bind("incoming_friend_requests", friendRequestHandler);
+
+    return () => {
+      pusherClient.unsubscribe(
+        toPusherKey(`user:${userId}:incoming_friend_requests`)
+      );
+      pusherClient.unbind("incoming_friend_requests", friendRequestHandler);
+    };
+  }, [userId]);
+
+  // fetch friend requests
+  useEffect(() => {
+    pusherClient.subscribe(
+      toPusherKey(`user:${userId}:incoming_friend_requests`)
+    );
+    const friendRequestHandler = (data: UserData) => {
+      setFriendRequestsData((prev) => [...prev, data]);
+    };
+    pusherClient.bind("incoming_friend_requests", friendRequestHandler);
+
+    return () => {
+      pusherClient.unsubscribe(
+        toPusherKey(`user:${userId}:incoming_friend_requests`)
+      );
+      pusherClient.unbind("incoming_friend_ requests", friendRequestHandler);
+    };
+  }, [userId]);
 
   // Callback functions for friend request actions
   const handleAcceptFriend = async (friendId: string) => {
-    console.log("Accepting friend request from:", friendId);
     try {
       const request = await fetch(`/api/friends/accept`, {
         method: "POST",
@@ -92,14 +132,14 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
       }
     >
       <AppSidebar
-        unseenRequestCount={unseenRequestCount}
+        unseenRequestCount={requestCount}
         friendRequestsData={friendRequestsData}
         onAcceptFriend={handleAcceptFriend}
         onDenyFriend={handleDenyFriend}
         initialFriends={initialFriends}
       />
       <SidebarInset>
-        <header className="bg-background sticky top-0 flex shrink-0 items-center gap-2 border-b p-4">
+        <header className="bg-background top-0 flex shrink-0 items-center gap-2 border-b p-4">
           <SidebarTrigger className="-ml-1" />
           <Separator
             orientation="vertical"
@@ -117,7 +157,7 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
             </BreadcrumbList>
           </Breadcrumb>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 ">{children}</div>
+        <div className="h-full w-full">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );
