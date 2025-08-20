@@ -1,35 +1,34 @@
 "use client";
-import { getFriendsByUserId } from "@/lib/hepper/get-friends";
 import { useUser } from "@clerk/nextjs";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { UserData } from "@/types/user";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
-const Friends = () => {
-  const [userFriends, setUserFriends] = React.useState<UserData[]>([]);
-  const { user } = useUser();
+const Friends = ({ initialFriends }: { initialFriends: UserData[] }) => {
+  const [userFriends, setUserFriends] =
+    useState<UserData[]>(initialFriends);
+  // const { user } = useUser();
 
-  useEffect(() => {
-    const fetchFriends = async () => {
-      if (user) {
-        const friends = await fetch(
-          `/api/friends/getFriends?userId=${user.id}`
-        );
-        const data = await friends.json();
-        console.log("Fetched friends:", data);
-        if (friends.status !== 200) {
-          console.error("Failed to fetch friends:", data);
-          return;
-        }
-        setUserFriends(data.friends);
-      }
-    };
-    fetchFriends();
-  }, [user]);
+  // useEffect(() => {
+  //   const fetchFriends = async () => {
+  //     if (user) {
+  //       const friends = await fetch(
+  //         `/api/friends/getFriends?userId=${user.id}`
+  //       );
+  //       const data = await friends.json();
+  //       if (friends.status !== 200) {
+  //         console.error("Failed to fetch friends:", data);
+  //         return;
+  //       }
+  //       setUserFriends(data.friends);
+  //     }
+  //   };
+  //   fetchFriends();
+  // }, [user]);
 
-  if (!userFriends.length) {
-    return <div>No friends found.</div>;
-  }
+  // if (!userFriends.length) {
+  //   return <div>No friends found.</div>;
+  // }
 
   return userFriends.map((friend) => (
     <div

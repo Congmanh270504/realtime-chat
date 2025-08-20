@@ -46,7 +46,7 @@ export default async function RootLayout({
 
   const friendRequests = await getFriendRequestsByUserId(user.id);
 
-  const userFriends = await getFriendsByUserId(user.id);
+  const initialFriends = await getFriendsByUserId(user.id);
 
   return (
     <ClerkProvider dynamic>
@@ -64,7 +64,7 @@ export default async function RootLayout({
           <ClientProvider
             unseenRequestCount={unseenRequests.length}
             friendRequests={friendRequests}
-            userFriends={userFriends}
+            initialFriends={initialFriends}
           >
             {children}
           </ClientProvider>

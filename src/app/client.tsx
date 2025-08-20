@@ -22,14 +22,14 @@ interface ClientProviderProps {
   children: React.ReactNode;
   unseenRequestCount: number;
   friendRequests: UserData[];
-  userFriends: UserData[];
+  initialFriends: UserData[];
 }
 
 const ClientProvider: React.FC<ClientProviderProps> = ({
   children,
   unseenRequestCount,
   friendRequests,
-  userFriends,
+  initialFriends,
 }) => {
   const [friendRequestsData, setFriendRequestsData] = useState(friendRequests);
 
@@ -96,7 +96,7 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
         friendRequestsData={friendRequestsData}
         onAcceptFriend={handleAcceptFriend}
         onDenyFriend={handleDenyFriend}
-        userFriends={userFriends}
+        initialFriends={initialFriends}
       />
       <SidebarInset>
         <header className="bg-background sticky top-0 flex shrink-0 items-center gap-2 border-b p-4">

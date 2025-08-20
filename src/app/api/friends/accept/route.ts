@@ -54,6 +54,8 @@ export async function POST(req: Request) {
     }
     redis.sadd(`user:${user.id}:friends`, friendId);
     redis.sadd(`user:${friendId}:friends`, user.id);
+    
+    redis.srem(`user:${friendId}:incoming_friend_requests`, user.id);
     redis.srem(`user:${user.id}:incoming_friend_requests`, friendId);
 
     return NextResponse.json(

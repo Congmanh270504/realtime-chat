@@ -19,10 +19,11 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
-import { SignedIn, UserButton } from "@clerk/nextjs";
 import { UserData } from "@/types/user";
 import { FriendRequestItem } from "./friend-request-item";
 import Friends from "./friends";
+import SidebarChatList from "./sidebar-chat-list";
+import { NavUser } from "./nav-user";
 // This is sample data
 
 export function AppSidebar({
@@ -30,12 +31,12 @@ export function AppSidebar({
   friendRequestsData = [],
   onAcceptFriend,
   onDenyFriend,
-  userFriends,
+  initialFriends,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   unseenRequestCount?: number;
   friendRequestsData?: UserData[];
-  userFriends: UserData[];
+  initialFriends: UserData[];
   onAcceptFriend: (friendId: string) => void;
   onDenyFriend: (friendId: string) => void;
 }) {
@@ -53,7 +54,7 @@ export function AppSidebar({
         url: "#",
         icon: Inbox,
         isActive: true,
-        component: <div>Inbox Component</div>,
+        component: <SidebarChatList friends={initialFriends} />,
       },
       {
         title: "Drafts",
@@ -88,7 +89,7 @@ export function AppSidebar({
         url: "#",
         icon: MdPeopleAlt,
         isActive: false,
-        component: <Friends />,
+        component: <Friends initialFriends={initialFriends} />,
       },
       {
         title: "Add Friends",
@@ -246,7 +247,7 @@ export function AppSidebar({
                       isActive={activeItem?.title === item.title}
                       className="px-2.5 md:px-2"
                     >
-                      {item.title === "Friends" ? (
+                      {item.title === "Add Friends" ? (
                         <div className="relative">
                           <item.icon />
                           {unseenRequestCount > 0 && (
@@ -267,9 +268,7 @@ export function AppSidebar({
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <SignedIn>
-            <UserButton />
-          </SignedIn>
+          <NavUser />
         </SidebarFooter>
       </Sidebar>
 
@@ -290,7 +289,7 @@ export function AppSidebar({
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup className="px-0">
-            <SidebarGroupContent>
+            <SidebarGroupContent className="p-2">
               {activeItem.component}
               {/* <Friends /> */}
             </SidebarGroupContent>
