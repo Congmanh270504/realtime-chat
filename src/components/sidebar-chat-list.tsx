@@ -40,7 +40,7 @@ const SidebarChatList = ({ friends }: SidebarChatListProps) => {
           <Link
             key={friend.id}
             href={`${chatHrefConstructor(user?.id, friend.id)}`}
-            className="bg-gray-400 flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-lg"
+            className="bg-base-200 shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-lg"
           >
             <div className="flex items-center gap-2">
               {/* {friend.firstName} {friend.lastName} */}

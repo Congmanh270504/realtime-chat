@@ -5,6 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Copy,
   Download,
   ThumbsUp,
@@ -13,11 +19,13 @@ import {
   Video,
   Info,
   Send,
+  EllipsisVertical,
+  SmilePlus,
+  Trash,
 } from "lucide-react";
 import { cn, toPusherKey } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Message } from "@/types/message";
-import { toast } from "sonner";
 import { UserData } from "@/types/user";
 import {
   formatTimestamp,
@@ -26,6 +34,8 @@ import {
 import { TimeDivider } from "./time-divider";
 import { pusherClient } from "@/lib/pusher";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ChatReactIcons from "./chat-react-icons";
+import Emoji from "./emoji";
 
 interface ChatInterfaceProps {
   initialMessages: Message[];
@@ -76,9 +86,12 @@ export default function ChatInterface({
     }
   };
 
+  const handleEmojiSelect = (emoji: string) => {
+    setInput((prev) => prev + emoji);
+  };
+
   return (
     <div className="h-full flex flex-col w-full relative ">
-      {/* head content */}
       <div className="sticky top-3 right-0 z-10 bg-green-100 px-6 py-4 border-b flex items-center justify-between rounded-2xl mx-6 mt-6 flex-shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8 rounded-lg">
@@ -127,7 +140,7 @@ export default function ChatInterface({
       </div>
 
       <ScrollArea className="flex-1 px-6 py-4">
-        <div className="space-y-6 w-full px-4 pb-6">
+        <div className="space-y-4 w-full px-4 pb-6 md:space-y-6">
           {messages.map((message, index) => {
             const isCurrentUser = message.senderId === currentUser.id;
             const previousMessage = index > 0 ? messages[index - 1] : undefined;
@@ -136,7 +149,6 @@ export default function ChatInterface({
               previousMessage?.timestamp
             );
             const isHovered = hoveredMessageId === message.id;
-
             return (
               <div key={`${message.id}-${message.timestamp}`}>
                 {/* Time Divider */}
@@ -157,7 +169,7 @@ export default function ChatInterface({
                     className={cn(
                       "flex gap-3 ",
                       isCurrentUser && "flex-row-reverse",
-                      isMobile ? "w-full" : "max-w-[70%]"
+                      isMobile ? "w-full" : ""
                     )}
                   >
                     {!isCurrentUser && (
@@ -177,8 +189,13 @@ export default function ChatInterface({
                         </AvatarFallback>
                       </Avatar>
                     )}
-                    <div className="space-y-2 grid grid-cols-2 gap-2 max-sm:grid-cols-1">
-                      <div className={isCurrentUser ? "order-2" : "order-1"}>
+                    <div className="space-y-2 flex w-full gap-2 max-w-xl">
+                      <div
+                        className={cn(
+                          "w-full",
+                          isCurrentUser ? "order-2" : "order-1"
+                        )}
+                      >
                         <div
                           className={cn(
                             "flex items-center gap-2",
@@ -194,38 +211,61 @@ export default function ChatInterface({
                         </div>
                         <div
                           className={cn(
-                            "p-3 rounded-lg",
-                            !isCurrentUser
-                              ? "bg-muted/50"
-                              : "bg-primary text-primary-foreground"
+                            "flex items-center gap-2",
+                            isCurrentUser && "flex-row-reverse"
                           )}
                         >
-                          <p className="text-sm whitespace-pre-wrap">
-                            {message.text}
-                          </p>
+                          <div
+                            className={cn(
+                              "p-3 rounded-lg",
+                              !isCurrentUser
+                                ? "bg-muted/50"
+                                : "bg-primary text-primary-foreground"
+                            )}
+                          >
+                            <p className="text-sm whitespace-pre-wrap">
+                              {message.text}
+                            </p>
+                          </div>
+                          {isMobile && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger>
+                                <EllipsisVertical className="h-6 w-6 bg-gray-300 rounded-full p-1" />
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem>
+                                  Copy
+                                  <Copy className="h-4 w-4" />
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  {" "}
+                                  Delete
+                                  <Trash className="h-4 w-4 text-red-500" />
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  Like
+                                  <ThumbsUp className="h-4 w-4" />
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  DisLike
+                                  <ThumbsDown className="h-4 w-4" />
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                       </div>
-
-                      <div
-                        className={cn(
-                          "flex items-center gap-2 mt-4 transition-opacity duration-200",
-                          isCurrentUser ? "order-1" : "order-2",
-                          isHovered ? "opacity-100" : "opacity-0"
-                        )}
-                      >
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <ThumbsUp className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <ThumbsDown className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {!isMobile && (
+                        <div
+                          className={cn(
+                            "flex items-center transition-opacity duration-200",
+                            isCurrentUser ? "order-1" : "order-2",
+                            isHovered ? "opacity-100" : "opacity-0"
+                          )}
+                        >
+                          <ChatReactIcons />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -249,6 +289,9 @@ export default function ChatInterface({
             onChange={(e) => setInput(e.target.value)}
             className="min-h-[44px] max-h-32 resize-none"
           />
+
+          <Emoji onEmojiSelect={handleEmojiSelect} />
+
           <Button
             className="px-8"
             onClick={handleAddMessage}
