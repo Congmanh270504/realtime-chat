@@ -1,5 +1,8 @@
 import { fetchRedis } from "@/lib/hepper/redis";
+import { pusherServer } from "@/lib/pusher";
 import { redis } from "@/lib/redis";
+import { toPusherKey } from "@/lib/utils";
+import { UserData } from "@/types/user";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 export async function POST(req: Request) {
@@ -52,11 +55,34 @@ export async function POST(req: Request) {
         { status: 404 }
       );
     }
-    redis.sadd(`user:${user.id}:friends`, friendId);
-    redis.sadd(`user:${friendId}:friends`, user.id);
-    
-    redis.srem(`user:${friendId}:incoming_friend_requests`, user.id);
-    redis.srem(`user:${user.id}:incoming_friend_requests`, friendId);
+
+    const [currentUserRaw, friendRaw] = await Promise.all([
+      fetchRedis("get", `user:${user.id}`),
+      fetchRedis("get", `user:${friendId}`),
+    ]);
+    const thisUser = JSON.parse(currentUserRaw) as UserData;
+    const friend = JSON.parse(friendRaw) as UserData;
+
+    await Promise.all([
+      // notify added user
+      pusherServer.trigger(
+        toPusherKey(`user:${friendId}:friends`),
+        "new_friend",
+        thisUser
+      ),
+
+      pusherServer.trigger(
+        toPusherKey(`user:${user.id}:friends`),
+        "new_friend",
+        friend
+      ),
+      
+      redis.sadd(`user:${user.id}:friends`, friendId),
+      redis.sadd(`user:${friendId}:friends`, user.id),
+
+      redis.srem(`user:${friendId}:incoming_friend_requests`, user.id),
+      redis.srem(`user:${user.id}:incoming_friend_requests`, friendId),
+    ]);
 
     return NextResponse.json(
       { messages: "Friend request accepted" },

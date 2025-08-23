@@ -10,6 +10,8 @@ import {
   getFriendRequestsByUserId,
   getFriendsByUserId,
 } from "@/lib/hepper/get-friends";
+import { Message } from "@/types/message";
+import { chatHrefConstructor } from "@/lib/utils";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -48,6 +50,35 @@ export default async function RootLayout({
 
   const initialFriends = await getFriendsByUserId(user.id);
 
+  const friendsWithLastMessage = await Promise.all(
+    initialFriends.map(async (friend) => {
+      const sortedIds = [user.id, friend.id].sort();
+      const [lastMessageRaw] = await fetchRedis(
+        "zrange",
+        `chat:${sortedIds[0]}--${sortedIds[1]}:messages`,
+        -1,
+        -1
+      );
+      if (!lastMessageRaw) {
+        return {
+          ...friend,
+          lastMessage: {
+            id: "",
+            text: "You are now friends! Let's chat together.",
+            senderId: "",
+            timestamp: 0,
+          } as Message,
+        };
+      } else {
+        const lastMessage = JSON.parse(lastMessageRaw) as Message;
+        return {
+          ...friend,
+          lastMessage,
+        };
+      }
+    })
+  );
+
   return (
     <ClerkProvider dynamic>
       <html lang="en">
@@ -64,7 +95,7 @@ export default async function RootLayout({
           <ClientProvider
             unseenRequestCount={unseenRequests.length}
             friendRequests={friendRequests}
-            initialFriends={initialFriends}
+            initialFriends={friendsWithLastMessage}
             userId={user.id}
           >
             {children}

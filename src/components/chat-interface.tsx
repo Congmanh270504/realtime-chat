@@ -68,7 +68,7 @@ export default function ChatInterface({
       pusherClient.unsubscribe(toPusherKey(`chat:${chatId}`));
       pusherClient.unbind("incoming_message", messageHandler);
     };
-  }, [currentUser.id]);
+  }, [chatId]);
 
   const handleAddMessage = async () => {
     if (!input) return;

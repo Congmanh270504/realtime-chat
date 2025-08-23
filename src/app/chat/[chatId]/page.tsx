@@ -6,7 +6,8 @@ import { Message } from "@/types/message";
 import { UserData } from "@/types/user";
 import { SignIn } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
-import React from "react";
+import React, { Suspense } from "react";
+import Loading from "./loading";
 interface PageProps {
   params: Promise<{
     chatId: string;
@@ -43,8 +44,9 @@ const Page = async ({ params }: PageProps) => {
   }
 
   const chatPartnerId = userId1 === user.id ? userId2 : userId1;
-  const chatPartner = (await redis.get(`user:${chatPartnerId}`)) as UserData;
+  const chatPartnerRaw = await fetchRedis("get", `user:${chatPartnerId}`);
 
+  const chatPartner = JSON.parse(chatPartnerRaw) as UserData;
   const initialMessages = (await getChatMessages(chatId)) as Message[];
 
   const transferCurrentUser: UserData = {
@@ -58,12 +60,14 @@ const Page = async ({ params }: PageProps) => {
   };
 
   return (
-    <ChatInterface
-      chatId={chatId}
-      initialMessages={initialMessages}
-      currentUser={transferCurrentUser}
-      chatPartner={chatPartner}
-    />
+    <Suspense fallback={<Loading />}>
+      <ChatInterface
+        chatId={chatId}
+        initialMessages={initialMessages}
+        currentUser={transferCurrentUser}
+        chatPartner={chatPartner}
+      />
+    </Suspense>
   );
 };
 

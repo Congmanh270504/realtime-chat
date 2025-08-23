@@ -1,3 +1,5 @@
+import { UserData } from "./user";
+
 export interface Message {
   id: string;
   senderId: string;
@@ -15,4 +17,8 @@ export interface FriendRequest {
   id: string;
   senderId: string;
   receiverId: string;
+}
+
+export interface FriendsWithLastMessage extends UserData {
+  lastMessage: Message;
 }
