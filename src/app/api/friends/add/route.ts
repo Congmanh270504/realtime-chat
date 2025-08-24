@@ -12,24 +12,24 @@ export async function POST(req: Request) {
     const { email } = body;
     if (!email) {
       return NextResponse.json(
-        { messages: "Email is missing" },
+        { message: "Email is missing" },
         { status: 400 }
       );
     }
     const idToAdd = (await fetchRedis("get", `user:email:${email}`)) as string;
 
     if (!idToAdd) {
-      return NextResponse.json({ messages: "User not found" }, { status: 404 });
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
     const user = await currentUser();
     if (!user) {
-      return NextResponse.json({ messages: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     if (user.id === idToAdd) {
       return NextResponse.json(
-        { messages: "You cannot add yourself as a friend" },
+        { message: "You cannot add yourself as a friend" },
         { status: 400 }
       );
     }
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
     if (isAlreadyAdded) {
       return NextResponse.json(
-        { messages: "Friend already added" },
+        { message: "Friend already added" },
         { status: 400 }
       );
     }
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
 
     if (isAlreadyFriends) {
       return NextResponse.json(
-        { messages: "Already friends with this user" },
+        { message: "Already friends with this user" },
         { status: 400 }
       );
     }
@@ -78,13 +78,13 @@ export async function POST(req: Request) {
     await redis.sadd(`user:${idToAdd}:incoming_friend_requests`, user.id);
 
     return NextResponse.json(
-      { messages: "Add friend successfully" },
+      { message: "Add friend successfully" },
       { status: 200 }
     );
   } catch (error) {
     console.error("Error processing request:", error);
     return NextResponse.json(
-      { messages: "Internal server error" },
+      { message: "Internal server error" },
       { status: 500 }
     );
   }

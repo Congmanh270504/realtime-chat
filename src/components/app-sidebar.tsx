@@ -23,27 +23,23 @@ import { FriendRequestItem } from "./friend-request-item";
 import Friends from "./friends";
 import SidebarChatList from "./sidebar-chat-list";
 import { NavUser } from "./nav-user";
-import { SignIn, useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { FriendsWithLastMessage } from "@/types/message";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function AppSidebar({
   unseenRequestCount = 0,
-  friendRequestsData = [],
   userId,
-  onAcceptFriend,
-  onDenyFriend,
   initialFriends,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   unseenRequestCount?: number;
-  friendRequestsData?: UserData[];
   initialFriends: FriendsWithLastMessage[];
   userId: string;
-  onAcceptFriend: (friendId: string) => void;
-  onDenyFriend: (friendId: string) => void;
 }) {
   const { setOpen } = useSidebar();
+  const router = useRouter();
   // Move all hooks before any conditional returns
   const data = {
     user: {
@@ -57,7 +53,6 @@ export function AppSidebar({
         url: "#",
         icon: Inbox,
         isActive: true,
-        component: <SidebarChatList friends={initialFriends} userId={userId} />,
       },
       {
         title: "Drafts",
@@ -89,23 +84,19 @@ export function AppSidebar({
       },
       {
         title: "Friends",
-        url: "#",
+        url: "/all-friends",
         icon: MdPeopleAlt,
         isActive: false,
-        component: <Friends initialFriends={initialFriends} />,
+        // component: <Friends initialFriends={initialFriends} />,
       },
       {
         title: "Add Friends",
-        url: "#",
+        url: "/add-friends",
         icon: MdPersonAddAlt1,
         isActive: false,
-        component: (
-          <FriendRequestItem
-            friends={friendRequestsData}
-            onAccept={onAcceptFriend}
-            onDeny={onDenyFriend}
-          />
-        ),
+        // component: (
+        //   <FriendRequestItem friends={friendRequestsData} userId={userId} />
+        // ),
       },
     ],
   };
@@ -156,6 +147,10 @@ export function AppSidebar({
                       onClick={() => {
                         setActiveItem(item);
                         setOpen(true);
+                        // Navigate to URL if it's not just a hash
+                        if (item.url && item.url !== "#") {
+                          router.push(item.url);
+                        }
                       }}
                       isActive={activeItem?.title === item.title}
                       className="px-2.5 md:px-2"
@@ -203,7 +198,7 @@ export function AppSidebar({
         <SidebarContent>
           <SidebarGroup className="px-0">
             <SidebarGroupContent className="p-2">
-              {activeItem.component}
+              <SidebarChatList friends={initialFriends} userId={userId} />
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>

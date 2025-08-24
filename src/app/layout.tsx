@@ -6,12 +6,9 @@ import ClientProvider from "./client";
 import { ClerkProvider } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { fetchRedis } from "@/lib/hepper/redis";
-import {
-  getFriendRequestsByUserId,
-  getFriendsByUserId,
-} from "@/lib/hepper/get-friends";
+import { getFriendsByUserId } from "@/lib/hepper/get-friends";
+import { getCachedFriendRequests } from "@/lib/cache/friend-requests";
 import { Message } from "@/types/message";
-import { chatHrefConstructor } from "@/lib/utils";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -45,8 +42,6 @@ export default async function RootLayout({
     "smembers",
     `user:${user.id}:incoming_friend_requests`
   )) as string[];
-
-  const friendRequests = await getFriendRequestsByUserId(user.id);
 
   const initialFriends = await getFriendsByUserId(user.id);
 
@@ -94,7 +89,6 @@ export default async function RootLayout({
         </ThemeProvider> */}
           <ClientProvider
             unseenRequestCount={unseenRequests.length}
-            friendRequests={friendRequests}
             initialFriends={friendsWithLastMessage}
             userId={user.id}
           >

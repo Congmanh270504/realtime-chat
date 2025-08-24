@@ -18,12 +18,12 @@ export async function POST(req: Request) {
 
     const user = await currentUser();
     if (!user) {
-      return NextResponse.json({ messages: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     if (user.id === friendId) {
       return NextResponse.json(
-        { messages: "You cannot deny yourself as a friend" },
+        { message: "You cannot deny yourself as a friend" },
         { status: 400 }
       );
     }
@@ -35,16 +35,18 @@ export async function POST(req: Request) {
       JSON.parse(friend) as UserData
     );
 
+    
+
     await redis.srem(`user:${user.id}:incoming_friend_requests`, friendId);
 
     return NextResponse.json(
-      { messages: "Friend request denied" },
+      { message: "Friend request denied" },
       { status: 200 }
     );
   } catch (error) {
     console.error("Error processing request:", error);
     return NextResponse.json(
-      { messages: "Internal server error" },
+      { message: "Internal server error" },
       { status: 500 }
     );
   }

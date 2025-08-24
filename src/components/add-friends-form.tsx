@@ -42,9 +42,9 @@ export default function AddFriendsForm() {
 
       const data = await response.json();
       if (response.status !== 200) {
-        toast.error(data.messages || "Failed to add friend");
+        toast.error(data.message);
       } else {
-        toast.success(data.messages || "Friend added successfully");
+        toast.success(data.message);
       }
     } catch (error) {
       console.error("Error submitting form:", error);

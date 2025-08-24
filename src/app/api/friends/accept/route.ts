@@ -2,6 +2,7 @@ import { fetchRedis } from "@/lib/hepper/redis";
 import { pusherServer } from "@/lib/pusher";
 import { redis } from "@/lib/redis";
 import { toPusherKey } from "@/lib/utils";
+import { Message } from "@/types/message";
 import { UserData } from "@/types/user";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
@@ -18,12 +19,12 @@ export async function POST(req: Request) {
 
     const user = await currentUser();
     if (!user) {
-      return NextResponse.json({ messages: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     if (user.id === friendId) {
       return NextResponse.json(
-        { messages: "You cannot add yourself as a friend" },
+        { message: "You cannot add yourself as a friend" },
         { status: 400 }
       );
     }
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
 
     if (isAlreadyFriends) {
       return NextResponse.json(
-        { messages: "Already friends with this user" },
+        { message: "Already friends with this user" },
         { status: 400 }
       );
     }
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
 
     if (!isAlreadyAdded) {
       return NextResponse.json(
-        { messages: "Friend request not found" },
+        { message: "Friend request not found" },
         { status: 404 }
       );
     }
@@ -68,15 +69,33 @@ export async function POST(req: Request) {
       pusherServer.trigger(
         toPusherKey(`user:${friendId}:friends`),
         "new_friend",
-        thisUser
+        {
+          ...thisUser,
+          lastMessage: {
+            id: "",
+            text: "You are now friends! Let's chat together.",
+            senderId: "",
+            receiverId: "",
+            timestamp: 0,
+          } as Message,
+        }
       ),
 
       pusherServer.trigger(
         toPusherKey(`user:${user.id}:friends`),
         "new_friend",
-        friend
+        {
+          ...friend,
+          lastMessage: {
+            id: "",
+            text: "You are now friends! Let's chat together.",
+            senderId: "",
+            receiverId: "",
+            timestamp: 0,
+          } as Message,
+        }
       ),
-      
+
       redis.sadd(`user:${user.id}:friends`, friendId),
       redis.sadd(`user:${friendId}:friends`, user.id),
 
@@ -85,13 +104,13 @@ export async function POST(req: Request) {
     ]);
 
     return NextResponse.json(
-      { messages: "Friend request accepted" },
+      { message: "Friend request accepted" },
       { status: 200 }
     );
   } catch (error) {
     console.error("Error processing request:", error);
     return NextResponse.json(
-      { messages: "Internal server error" },
+      { message: "Internal server error" },
       { status: 500 }
     );
   }

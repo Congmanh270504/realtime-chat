@@ -2,28 +2,105 @@
 
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { pusherClient } from "@/lib/pusher";
+import { toPusherKey } from "@/lib/utils";
 import { UserData } from "@/types/user";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface FriendRequestItemProps {
   friends: UserData[];
-  onAccept: (friendId: string) => void;
-  onDeny: (friendId: string) => void;
+  userId: string;
 }
 
-export function FriendRequestItem({
-  friends,
-  onAccept,
-  onDeny,
-}: FriendRequestItemProps) {
+export function FriendRequestItem({ friends, userId }: FriendRequestItemProps) {
+  const [friendRequestsData, setFriendRequestsData] = useState(friends);
+
+  // fetch friend requests
   useEffect(() => {
-    console.log("Friend requests:", friends);
-  }, [friends]);
+    // pusherClient.subscribe(
+    //   toPusherKey(`user:${userId}:incoming_friend_requests`)
+    // );
+    pusherClient.subscribe(toPusherKey(`user:${userId}:friend_request_denied`));
+
+    const friendRequestDeniedHandler = (data: UserData) => {
+      setFriendRequestsData((prev) =>
+        prev.filter((friend) => friend.id !== data.id)
+      );
+      // setRequestCount((prev) => prev - 1);
+    };
+
+    // const friendRequestHandler2 = (data: UserData) => {
+    //   setFriendRequestsData((prev) => [...prev, data]);
+    // };
+
+    // pusherClient.bind("incoming_friend_requests", friendRequestHandler2);
+    pusherClient.bind("friend_request_denied", friendRequestDeniedHandler);
+
+    return () => {
+      pusherClient.unsubscribe(
+        toPusherKey(`user:${userId}:incoming_friend_requests`)
+      );
+      pusherClient.unsubscribe(toPusherKey(`user:${userId}:friends`));
+      // pusherClient.unbind("incoming_friend_requests", friendRequestHandler2);
+      pusherClient.unbind("friend_request_denied", friendRequestDeniedHandler);
+    };
+  }, [userId]);
+
+  // Callback functions for friend request actions
+  const handleAcceptFriend = async (friendId: string) => {
+    try {
+      const request = await fetch(`/api/friends/accept`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friendId }),
+      });
+
+      const data = await request.json();
+      if (request.status === 200) {
+        toast.success(data.messages);
+
+        setFriendRequestsData((prev) =>
+          prev.filter((friend) => friend.id !== friendId)
+        );
+      } else {
+        toast.error(data.messages);
+      }
+    } catch (error) {
+      console.error("Error accepting friend request:", error);
+    }
+  };
+
+  const handleDenyFriend = async (friendId: string) => {
+    try {
+      const request = await fetch(`/api/friends/deny`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ friendId }),
+      });
+
+      const data = await request.json();
+      if (request.status === 200) {
+        toast.success(data.messages);
+        setFriendRequestsData((prev) =>
+          prev.filter((friend) => friend.id !== friendId)
+        );
+      } else {
+        toast.error(data.messages);
+      }
+    } catch (error) {
+      console.error("Error denying friend request:", error);
+    }
+  };
 
   return (
     <>
-      {friends.length > 0 ? (
-        friends.map((friend) => (
+      {friendRequestsData.length > 0 ? (
+        friendRequestsData.map((friend) => (
           <div
             key={friend.id}
             className="flex items-center gap-3 p-3 bg-white border rounded-lg shadow-sm"
@@ -42,14 +119,14 @@ export function FriendRequestItem({
               <div className="flex justify-around">
                 <Button
                   variant="outline"
-                  onClick={() => onDeny(friend.id)}
+                  onClick={() => handleDenyFriend(friend.id)}
                   className="hover:bg-red-50 hover:border-red-300"
                 >
                   Deny
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => onAccept(friend.id)}
+                  onClick={() => handleAcceptFriend(friend.id)}
                   className="hover:bg-green-50 hover:border-green-300"
                 >
                   Accept

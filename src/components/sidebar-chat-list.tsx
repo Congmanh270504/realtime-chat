@@ -7,8 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { pusherClient } from "@/lib/pusher";
 import { toast } from "sonner";
 import CustomToast from "./custom-toast";
-import { UserData } from "@/types/user";
-
 interface SidebarChatListProps {
   friends: FriendsWithLastMessage[];
   userId: string;
@@ -29,7 +27,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
 
   useEffect(() => {
     pusherClient.subscribe(toPusherKey(`user:${userId}:chats`));
-    pusherClient.subscribe(toPusherKey(`user:${userId}:friends`));
+    // pusherClient.subscribe(toPusherKey(`user:${userId}:friends`));
 
     const chatHandler = (message: ExtendedMessage) => {
       const shouldNotify =
@@ -53,7 +51,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
     pusherClient.bind("new_friend", newFriendHandler);
     return () => {
       pusherClient.unsubscribe(toPusherKey(`user:${userId}:chats`));
-      pusherClient.unsubscribe(toPusherKey(`user:${userId}:friends`));
+      // pusherClient.unsubscribe(toPusherKey(`user:${userId}:friends`));
       pusherClient.unbind("new_message", chatHandler);
       pusherClient.unbind("new_friend", newFriendHandler);
     };
@@ -104,9 +102,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
                 <span>{friend.username}</span>
                 <div className="flex items-center gap-1 text-xs text-gray-500">
                   <span className="text-gray-700 text-sm">
-                    {latestMessage.id && latestMessage.senderId === userId
-                      ? "You: "
-                      : ""}
+                    {latestMessage.senderId === userId ? "You: " : ""}
                   </span>
                   <span className="mb-0.5">{latestMessage.text}</span>
                 </div>

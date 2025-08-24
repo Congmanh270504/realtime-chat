@@ -25,7 +25,6 @@ import { fr } from "zod/v4/locales";
 interface ClientProviderProps {
   children: React.ReactNode;
   unseenRequestCount: number;
-  friendRequests: UserData[];
   initialFriends: FriendsWithLastMessage[];
   userId: string;
 }
@@ -33,11 +32,9 @@ interface ClientProviderProps {
 const ClientProvider: React.FC<ClientProviderProps> = ({
   children,
   unseenRequestCount,
-  friendRequests,
   initialFriends,
   userId,
 }) => {
-  const [friendRequestsData, setFriendRequestsData] = useState(friendRequests);
   const [requestCount, setRequestCount] = useState(unseenRequestCount);
 
   // count request add friends data
@@ -56,101 +53,23 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
     };
 
     pusherClient.bind("incoming_friend_requests", friendRequestHandler);
+
     pusherClient.bind("new_friend", addedFriendHandler);
+    pusherClient.bind("friend_request_denied", addedFriendHandler);
     return () => {
       pusherClient.unsubscribe(
         toPusherKey(`user:${userId}:incoming_friend_requests`)
       );
       pusherClient.unsubscribe(toPusherKey(`user:${userId}:friends`));
+      pusherClient.unsubscribe(
+        toPusherKey(`user:${userId}:friend_request_denied`)
+      );
       pusherClient.unbind("new_friend", addedFriendHandler);
       pusherClient.unbind("incoming_friend_requests", friendRequestHandler);
+      pusherClient.unbind("friend_request_denied", addedFriendHandler);
     };
   }, [userId]);
 
-  // fetch friend requests
-  useEffect(() => {
-    pusherClient.subscribe(
-      toPusherKey(`user:${userId}:incoming_friend_requests`)
-    );
-    pusherClient.subscribe(toPusherKey(`user:${userId}:friend_request_denied`));
-
-    const friendRequestDeniedHandler = (data: UserData) => {
-      setFriendRequestsData((prev) =>
-        prev.filter((friend) => friend.id !== data.id)
-      );
-      setRequestCount((prev) => prev - 1);
-    };
-
-    const friendRequestHandler = (data: UserData) => {
-      setFriendRequestsData((prev) => [...prev, data]);
-    };
-
-    pusherClient.bind("incoming_friend_requests", friendRequestHandler);
-    pusherClient.bind("friend_request_denied", friendRequestDeniedHandler);
-
-    return () => {
-      pusherClient.unsubscribe(
-        toPusherKey(`user:${userId}:incoming_friend_requests`)
-      );
-      pusherClient.unsubscribe(toPusherKey(`user:${userId}:friends`));
-      pusherClient.unbind("incoming_friend_requests", friendRequestHandler);
-      pusherClient.unbind("friend_request_denied", friendRequestDeniedHandler);
-    };
-  }, [userId]);
-
-  // Callback functions for friend request actions
-  const handleAcceptFriend = async (friendId: string) => {
-    try {
-      const request = await fetch(`/api/friends/accept`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ friendId }),
-      });
-
-      const data = await request.json();
-      if (request.status === 200) {
-        toast.success(data.messages);
-
-        setFriendRequestsData((prev) =>
-          prev.filter((friend) => friend.id !== friendId)
-        );
-      } else {
-        toast.error(data.messages);
-      }
-    } catch (error) {
-      console.error("Error accepting friend request:", error);
-    }
-  };
-
-  const handleDenyFriend = async (friendId: string) => {
-    try {
-      const request = await fetch(`/api/friends/deny`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ friendId }),
-      });
-
-      const data = await request.json();
-      if (request.status === 200) {
-        toast.success(data.messages);
-        setFriendRequestsData((prev) =>
-          prev.filter((friend) => friend.id !== friendId)
-        );
-      } else {
-        toast.error(data.messages);
-      }
-    } catch (error) {
-      console.error("Error denying friend request:", error);
-    }
-  };
-
-  useEffect(() => {
-    console.log("abcd", friendRequestsData);
-  }, [friendRequestsData]);
 
   return (
     <SidebarProvider
@@ -162,9 +81,6 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
     >
       <AppSidebar
         unseenRequestCount={requestCount}
-        friendRequestsData={friendRequestsData}
-        onAcceptFriend={handleAcceptFriend}
-        onDenyFriend={handleDenyFriend}
         initialFriends={initialFriends}
         userId={userId}
       />
