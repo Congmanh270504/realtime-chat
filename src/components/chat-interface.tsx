@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Copy,
-  Download,
   ThumbsUp,
   ThumbsDown,
   Phone,
@@ -20,7 +19,6 @@ import {
   Info,
   Send,
   EllipsisVertical,
-  SmilePlus,
   Trash,
 } from "lucide-react";
 import { cn, toPusherKey } from "@/lib/utils";
@@ -54,33 +52,111 @@ export default function ChatInterface({
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   useEffect(() => {
-    pusherClient.subscribe(toPusherKey(`chat:${chatId}`));
+    // Đảm bảo kết nối tới Pusher
+    const chatChannel = toPusherKey(`chat:${chatId}`);
+    console.log("Subscribing to channel:", chatChannel);
+
+    pusherClient.subscribe(chatChannel);
 
     const messageHandler = (data: Message) => {
-      setMessages((prev) => [...prev, data]); 
+      console.log("Received message:", data);
+      setMessages((prev) => {
+        // Tìm và thay thế optimistic message nếu có
+        const optimisticIndex = prev.findIndex(
+          (msg) =>
+            msg.senderId === data.senderId &&
+            msg.text === data.text &&
+            msg.id.startsWith("temp-") &&
+            Math.abs(msg.timestamp - data.timestamp) < 5000 // trong vòng 5 giây
+        );
+
+        if (optimisticIndex !== -1) {
+          // Thay thế optimistic message bằng message thật
+          const newMessages = [...prev];
+          newMessages[optimisticIndex] = data;
+          return newMessages;
+        }
+
+        // Kiểm tra xem message đã tồn tại chưa để tránh duplicate
+        const exists = prev.some((msg) => msg.id === data.id);
+        if (exists) return prev;
+
+        return [...prev, data];
+      });
     };
 
     pusherClient.bind("incoming_message", messageHandler);
 
+    // Xử lý sự kiện kết nối
+    pusherClient.connection.bind("connected", () => {
+      console.log("Pusher connected");
+    });
+
+    pusherClient.connection.bind("disconnected", () => {
+      console.log("Pusher disconnected");
+    });
+
+    pusherClient.connection.bind("error", (error: unknown) => {
+      console.error("Pusher connection error:", error);
+    });
+
     return () => {
-      pusherClient.unsubscribe(toPusherKey(`chat:${chatId}`));
+      console.log("Unsubscribing from channel:", chatChannel);
+      pusherClient.unsubscribe(chatChannel);
       pusherClient.unbind("incoming_message", messageHandler);
     };
   }, [chatId]);
 
+  // Auto scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
   const handleAddMessage = async () => {
-    if (!input) return;
+    if (!input.trim()) return;
+
+    const messageText = input.trim();
+    const tempId = `temp-${Date.now()}`;
+
+    // Optimistic update - thêm message ngay lập tức
+    const friendId =
+      currentUser.id === chatId.split("--")[0]
+        ? chatId.split("--")[1]
+        : chatId.split("--")[0];
+    const optimisticMessage: Message = {
+      id: tempId,
+      senderId: currentUser.id,
+      receiverId: friendId,
+      text: messageText,
+      timestamp: Date.now(),
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
+    setInput("");
+    setIsLoading(true);
+
     try {
-      setIsLoading(true);
-      await fetch("/api/messages/send", {
+      const response = await fetch("/api/messages/send", {
         method: "POST",
-        body: JSON.stringify({ text: input, chatId }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: messageText, chatId }),
       });
-      setInput("");
+
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
+
+      const result = await response.json();
+      console.log("Message sent successfully:", result);
     } catch (error) {
       console.error("Error sending message:", error);
+      // Xóa optimistic message nếu gửi thất bại
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
+      setInput(messageText); // Khôi phục input
     } finally {
       setIsLoading(false);
     }
@@ -272,6 +348,7 @@ export default function ChatInterface({
               </div>
             );
           })}
+          <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
       {/* input chat */}

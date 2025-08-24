@@ -13,5 +13,10 @@ export const pusherClient = new PusherClient(
   process.env.NEXT_PUBLIC_PUSHER_APP_KEY!,
   {
     cluster: "ap1",
+    forceTLS: true,
+    enabledTransports: ["ws", "wss"],
+    disabledTransports: ["xhr_polling", "xhr_streaming"],
+    activityTimeout: 120000,
+    pongTimeout: 60000,
   }
 );

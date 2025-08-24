@@ -56,26 +56,40 @@ export async function POST(request: Request) {
     };
     const message = messageValidator.parse(messageData);
 
-    // notify all clients in the chat
-    pusherServer.trigger(
-      toPusherKey(`chat:${chatId}`),
-      "incoming_message",
-      message
-    );
+    try {
+      // Lưu message vào database trước
+      await redis.zadd(`chat:${chatId}:messages`, {
+        score: message.timestamp,
+        member: JSON.stringify(message),
+      });
 
-    // notify the recipient's client
-    pusherServer.trigger(toPusherKey(`user:${friendId}:chats`), "new_message", {
-      ...message,
-      sender: {
-        username: sender.username,
-        imageUrl: sender.imageUrl,
-      },
-    });
+      // Sau đó mới trigger Pusher events
+      const chatKey = toPusherKey(`chat:${chatId}`);
+      const userKey = toPusherKey(`user:${friendId}:chats`);
 
-    await redis.zadd(`chat:${chatId}:messages`, {
-      score: message.timestamp,
-      member: JSON.stringify(message),
-    });
+      console.log("Triggering Pusher events:", {
+        chatKey,
+        userKey,
+        messageId: message.id,
+      });
+
+      // notify all clients in the chat
+      await pusherServer.trigger(chatKey, "incoming_message", message);
+
+      // notify the recipient's client
+      await pusherServer.trigger(userKey, "new_message", {
+        ...message,
+        sender: {
+          username: sender.username,
+          imageUrl: sender.imageUrl,
+        },
+      });
+
+      console.log("Pusher events triggered successfully");
+    } catch (pusherError) {
+      console.error("Pusher trigger error:", pusherError);
+      // Vẫn trả về success vì message đã được lưu
+    }
 
     return NextResponse.json({
       message: "Message sent successfully",

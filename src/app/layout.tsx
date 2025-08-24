@@ -9,6 +9,7 @@ import { fetchRedis } from "@/lib/hepper/redis";
 import { getFriendsByUserId } from "@/lib/hepper/get-friends";
 import { getCachedFriendRequests } from "@/lib/cache/friend-requests";
 import { Message } from "@/types/message";
+import PusherDebug from "@/components/pusher-debug";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -95,6 +96,7 @@ export default async function RootLayout({
             {children}
           </ClientProvider>
           <Toaster richColors position="top-center" closeButton />
+          <PusherDebug />
         </body>
       </html>
     </ClerkProvider>
