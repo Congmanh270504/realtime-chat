@@ -72,24 +72,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // notify the sender's client to update their chat list
-    pusherServer.trigger(toPusherKey(`user:${user.id}:chats`), "new_message", {
-      ...message,
-      sender: {
-        username: sender.username,
-        imageUrl: sender.imageUrl,
-      },
-    });
-
-    // await redis.set(
-    //   `chat:${chatId}:last_message`,
-    //   JSON.stringify({
-    //     text: message.text,
-    //     senderId: message.senderId,
-    //     timestamp: message.timestamp,
-    //   })
-    // );
-
     await redis.zadd(`chat:${chatId}:messages`, {
       score: message.timestamp,
       member: JSON.stringify(message),

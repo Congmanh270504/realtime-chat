@@ -59,7 +59,7 @@ export default function ChatInterface({
     pusherClient.subscribe(toPusherKey(`chat:${chatId}`));
 
     const messageHandler = (data: Message) => {
-      setMessages((prev) => [...prev, data]); // check if message display is wrong order
+      setMessages((prev) => [...prev, data]); 
     };
 
     pusherClient.bind("incoming_message", messageHandler);

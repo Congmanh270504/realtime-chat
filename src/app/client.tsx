@@ -20,7 +20,6 @@ import { useEffect, useState } from "react";
 import { pusherClient } from "@/lib/pusher";
 import { toPusherKey } from "@/lib/utils";
 import { FriendsWithLastMessage } from "@/types/message";
-import { fr } from "zod/v4/locales";
 
 interface ClientProviderProps {
   children: React.ReactNode;
