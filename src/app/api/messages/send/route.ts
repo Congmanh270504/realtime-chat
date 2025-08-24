@@ -67,12 +67,6 @@ export async function POST(request: Request) {
       const chatKey = toPusherKey(`chat:${chatId}`);
       const userKey = toPusherKey(`user:${friendId}:chats`);
 
-      console.log("Triggering Pusher events:", {
-        chatKey,
-        userKey,
-        messageId: message.id,
-      });
-
       // notify all clients in the chat
       await pusherServer.trigger(chatKey, "incoming_message", message);
 
@@ -84,8 +78,6 @@ export async function POST(request: Request) {
           imageUrl: sender.imageUrl,
         },
       });
-
-      console.log("Pusher events triggered successfully");
     } catch (pusherError) {
       console.error("Pusher trigger error:", pusherError);
       // Vẫn trả về success vì message đã được lưu
@@ -96,7 +88,6 @@ export async function POST(request: Request) {
       status: 200,
     });
   } catch (error) {
-    console.error("Error sending message:", error);
     return NextResponse.json({
       message:
         "Error sending message" + (error instanceof Error ? error.message : ""),

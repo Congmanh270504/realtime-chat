@@ -34,6 +34,7 @@ import { pusherClient } from "@/lib/pusher";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ChatReactIcons from "./chat-react-icons";
 import Emoji from "./emoji";
+import { toast } from "sonner";
 
 interface ChatInterfaceProps {
   initialMessages: Message[];
@@ -57,12 +58,10 @@ export default function ChatInterface({
   useEffect(() => {
     // Đảm bảo kết nối tới Pusher
     const chatChannel = toPusherKey(`chat:${chatId}`);
-    console.log("Subscribing to channel:", chatChannel);
 
     pusherClient.subscribe(chatChannel);
 
     const messageHandler = (data: Message) => {
-      console.log("Received message:", data);
       setMessages((prev) => {
         // Tìm và thay thế optimistic message nếu có
         const optimisticIndex = prev.findIndex(
@@ -90,21 +89,7 @@ export default function ChatInterface({
 
     pusherClient.bind("incoming_message", messageHandler);
 
-    // Xử lý sự kiện kết nối
-    pusherClient.connection.bind("connected", () => {
-      console.log("Pusher connected");
-    });
-
-    pusherClient.connection.bind("disconnected", () => {
-      console.log("Pusher disconnected");
-    });
-
-    pusherClient.connection.bind("error", (error: unknown) => {
-      console.error("Pusher connection error:", error);
-    });
-
     return () => {
-      console.log("Unsubscribing from channel:", chatChannel);
       pusherClient.unsubscribe(chatChannel);
       pusherClient.unbind("incoming_message", messageHandler);
     };
@@ -145,13 +130,11 @@ export default function ChatInterface({
         },
         body: JSON.stringify({ text: messageText, chatId }),
       });
+      const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error("Failed to send message");
+      if (!response.status) {
+        toast.error(data.message);
       }
-
-      const result = await response.json();
-      console.log("Message sent successfully:", result);
     } catch (error) {
       console.error("Error sending message:", error);
       // Xóa optimistic message nếu gửi thất bại

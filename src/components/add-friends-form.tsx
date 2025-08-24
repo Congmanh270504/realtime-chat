@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import axios from "axios";
 import { toast } from "sonner";
 
 export default function AddFriendsForm() {

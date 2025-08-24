@@ -32,11 +32,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
     const chatHandler = (message: ExtendedMessage) => {
       const shouldNotify =
         pathName !== `${chatHrefConstructor(userId, message.senderId)}`;
-      console.log(
-        shouldNotify,
-        pathName,
-        chatHrefConstructor(userId, message.senderId)
-      );
+      
       if (!shouldNotify) return;
 
       const chatHref = `${chatHrefConstructor(userId, message.senderId)}`;

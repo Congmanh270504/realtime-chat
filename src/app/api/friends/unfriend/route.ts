@@ -15,7 +15,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    console.log("friendId to unfriend:", friendId);
 
     const user = await currentUser();
 
