@@ -1,8 +1,7 @@
 import React from "react";
-import Loading from "../add-friends/loading";
 
 const Page = () => {
-  return <Loading />;
+  return <div>fadsfas</div>;
 };
 
 export default Page;

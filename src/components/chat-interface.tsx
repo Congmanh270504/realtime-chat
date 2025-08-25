@@ -41,6 +41,7 @@ interface ChatInterfaceProps {
   currentUser: UserData;
   chatId: string; // Optional chatId if needed for the API call
   chatPartner: UserData;
+  handleCloseProfile?: () => void;
 }
 
 export default function ChatInterface({
@@ -48,6 +49,7 @@ export default function ChatInterface({
   currentUser,
   chatId,
   chatPartner,
+  handleCloseProfile,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>(initialMessages);
@@ -150,7 +152,7 @@ export default function ChatInterface({
   };
 
   return (
-    <div className="h-full flex flex-col w-full relative ">
+    <div className="h-full flex flex-col w-full relative border rounded-lg overflow-hidden">
       <div className="sticky top-3 right-0 z-10 bg-green-100 px-6 py-4 border-b flex items-center justify-between rounded-2xl mx-6 mt-6 flex-shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8 rounded-lg">
@@ -192,14 +194,15 @@ export default function ChatInterface({
             variant="ghost"
             size="icon"
             className="h-10 w-10 text-green-600 hover:bg-green-200"
+            onClick={handleCloseProfile}
           >
             <Info className="h-5 w-5" />
           </Button>
         </div>
       </div>
 
-      <ScrollArea className="flex-1 px-6 py-4">
-        <div className="space-y-4 w-full px-4 pb-6 md:space-y-6">
+      <ScrollArea className="flex-1 px-6 pt-4 pb-2 overflow-hidden ">
+        <div className="space-y-4 w-full px-4 md:space-y-6">
           {messages.map((message, index) => {
             const isCurrentUser = message.senderId === currentUser.id;
             const previousMessage = index > 0 ? messages[index - 1] : undefined;
@@ -335,7 +338,7 @@ export default function ChatInterface({
         </div>
       </ScrollArea>
       {/* input chat */}
-      <div className="px-6 py-4 border-t bg-background flex-shrink-0 sticky bottom-0 left-0 right-0">
+      <div className="px-6 py-4 border-t bg-background flex-shrink-0 ">
         <div className="flex gap-2 items-center">
           <Textarea
             placeholder="Type a message"

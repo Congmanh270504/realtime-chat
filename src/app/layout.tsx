@@ -96,7 +96,6 @@ export default async function RootLayout({
             {children}
           </ClientProvider>
           <Toaster richColors position="top-center" closeButton />
-          <PusherDebug />
         </body>
       </html>
     </ClerkProvider>

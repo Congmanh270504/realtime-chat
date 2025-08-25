@@ -69,7 +69,6 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
     };
   }, [userId]);
 
-
   return (
     <SidebarProvider
       style={

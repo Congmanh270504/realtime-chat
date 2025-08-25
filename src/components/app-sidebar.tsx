@@ -18,14 +18,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
-import { UserData } from "@/types/user";
-import { FriendRequestItem } from "./friend-request-item";
-import Friends from "./friends";
 import SidebarChatList from "./sidebar-chat-list";
 import { NavUser } from "./nav-user";
 import { useState } from "react";
 import { FriendsWithLastMessage } from "@/types/message";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export function AppSidebar({
@@ -180,8 +176,6 @@ export function AppSidebar({
         </SidebarFooter>
       </Sidebar>
 
-      {/* This is the second sidebar */}
-      {/* We disable collapsible and let it fill remaining space */}
       <Sidebar collapsible="none" className="hidden flex-1 md:flex">
         <SidebarHeader className="gap-3.5 border-b p-4">
           <div className="flex w-full items-center justify-between">

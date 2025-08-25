@@ -1,6 +1,5 @@
 import ChatInterface from "@/components/chat-interface";
 import { fetchRedis } from "@/lib/hepper/redis";
-import { redis } from "@/lib/redis";
 import { messageArrayValidator } from "@/lib/validation/message";
 import { Message } from "@/types/message";
 import { UserData } from "@/types/user";
@@ -8,6 +7,8 @@ import { SignIn } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import React, { Suspense } from "react";
 import Loading from "./loading";
+import ProfileChat from "./profile-chat";
+import ChatLayout from "./chat-layout";
 interface PageProps {
   params: Promise<{
     chatId: string;
@@ -16,15 +17,15 @@ interface PageProps {
 async function getChatMessages(chatId: string) {
   try {
     const result = (await fetchRedis(
-      "zrange",
+      "zrevrange",
       `chat:${chatId}:messages`,
       0,
-      -1
+      9
     )) as string[];
     const dbMessages = result.map((message) => JSON.parse(message) as Message);
 
     const messages = messageArrayValidator.parse(dbMessages);
-    return messages;
+    return messages.reverse();
   } catch {
     return [];
   }
@@ -61,11 +62,11 @@ const Page = async ({ params }: PageProps) => {
 
   return (
     <Suspense fallback={<Loading />}>
-      <ChatInterface
-        chatId={chatId}
-        initialMessages={initialMessages}
-        currentUser={transferCurrentUser}
+      <ChatLayout
         chatPartner={chatPartner}
+        initialMessages={initialMessages}
+        transferCurrentUser={transferCurrentUser}
+        chatId={chatId}
       />
     </Suspense>
   );
