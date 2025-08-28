@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface UserStatus {
   status: string;
@@ -12,13 +12,22 @@ interface FriendsOnlineStatus {
 export function useFriendsOnlineStatus(userIds: string[]) {
   const [friendsStatus, setFriendsStatus] = useState<FriendsOnlineStatus>({});
   const [loading, setLoading] = useState(false);
+  const userIdsRef = useRef<string[]>([]);
 
-  const fetchFriendsOnlineStatus = useCallback(async () => {
-    if (!userIds.length) {
+  // Kiểm tra xem userIds có thay đổi thực sự không
+  const userIdsChanged =
+    userIdsRef.current.length !== userIds.length ||
+    userIdsRef.current.some((id, index) => id !== userIds[index]);
+
+  if (userIdsChanged) {
+    userIdsRef.current = userIds;
+  }
+
+  const fetchFriendsOnlineStatus = async () => {
+    if (!userIdsRef.current.length) {
       setFriendsStatus({});
       return;
     }
-
     setLoading(true);
     try {
       const response = await fetch("/api/user/status/batch", {
@@ -26,7 +35,7 @@ export function useFriendsOnlineStatus(userIds: string[]) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userIds }),
+        body: JSON.stringify({ userIds: userIdsRef.current }),
       });
 
       if (response.ok) {
@@ -38,16 +47,16 @@ export function useFriendsOnlineStatus(userIds: string[]) {
     } finally {
       setLoading(false);
     }
-  }, [userIds]);
+  };
 
-//   useEffect(() => {
-//     fetchFriendsOnlineStatus;
+  useEffect(() => {
+    fetchFriendsOnlineStatus();
 
-//     // Refresh status every 2 minutes
-//     const interval = setInterval(fetchFriendsOnlineStatus, 2 * 60 * 1000);
+    // Refresh status every 5 minutes
+    const interval = setInterval(fetchFriendsOnlineStatus, 10 * 60 * 1000);
 
-//     return () => clearInterval(interval);
-//   }, [fetchFriendsOnlineStatus]);
+    return () => clearInterval(interval);
+  }, [userIdsChanged]); // Chỉ chạy lại khi userIds thực sự thay đổi
 
   return {
     friendsStatus,

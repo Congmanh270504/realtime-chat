@@ -57,6 +57,7 @@ export default function ChatInterface({
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  
   useEffect(() => {
     // Đảm bảo kết nối tới Pusher
     const chatChannel = toPusherKey(`chat:${chatId}`);

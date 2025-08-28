@@ -1,5 +1,4 @@
 "use client";
-import { toast } from "sonner";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,7 +14,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { UserData } from "@/types/user";
 import { useEffect, useState } from "react";
 import { pusherClient } from "@/lib/pusher";
 import { toPusherKey } from "@/lib/utils";
@@ -35,8 +33,7 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
   initialFriends,
   userId,
 }) => {
-  
-  useOnlineStatus();
+  useOnlineStatus(); // POST /api/user/status 200 in 303ms
   const [requestCount, setRequestCount] = useState(unseenRequestCount);
 
   // count request add friends data

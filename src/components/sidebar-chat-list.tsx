@@ -8,7 +8,7 @@ import { pusherClient } from "@/lib/pusher";
 import { toast } from "sonner";
 import CustomToast from "./custom-toast";
 import { OnlineStatusIndicator } from "./online-status-indicator";
-import { useFriendsOnlineStatus } from "@/hooks/friends-online-status";
+import { useFriendsOnlineStatus } from "@/hooks/use-friends-online-status";
 
 interface SidebarChatListProps {
   friends: FriendsWithLastMessage[];
@@ -25,11 +25,40 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
   const router = useRouter();
   const pathName = usePathname();
   const [unseenMessages, setUnseenMessages] = useState<Message[]>([]);
-  const [activeChat, setActiveChat] = useState<FriendsWithLastMessage[]>(friends);
+  const [activeChat, setActiveChat] =
+    useState<FriendsWithLastMessage[]>(friends);
   const [isCurrentUserChat, setIsCurrentUserChat] = useState<boolean>(false);
-  // Get online status for all friends
-  const friendIds = activeChat.map(friend => friend.id);
-  const { friendsStatus } = useFriendsOnlineStatus(friendIds);
+
+  // // Get online status for all friends
+  const friendIds = activeChat.map((friend) => friend.id);
+  const { friendsStatus: friendsStatusData } =
+    useFriendsOnlineStatus(friendIds);
+  const [friendsStatus, setFriendsStatus] = useState(friendsStatusData);
+
+  // Sync hook data with local state
+  useEffect(() => {
+    setFriendsStatus(friendsStatusData);
+  }, [friendsStatusData]);
+
+  useEffect(() => {
+    pusherClient.subscribe(toPusherKey(`user:${userId}:friend_online_list`));
+
+    const handleFriendOnlineList = (data: {
+      [userId: string]: { status: string; lastSeen: number | null };
+    }) => {
+      console.log("Received friend status update:", data);
+      setFriendsStatus((prev) => {
+        return { ...prev, ...data };
+      });
+    };
+    pusherClient.bind("friend_online_list", handleFriendOnlineList);
+    return () => {
+      pusherClient.unbind("friend_online_list", handleFriendOnlineList);
+      pusherClient.unsubscribe(
+        toPusherKey(`user:${userId}:friend_online_list`)
+      );
+    };
+  }, [userId]);
 
   useEffect(() => {
     pusherClient.subscribe(toPusherKey(`user:${userId}:chats`));
@@ -90,15 +119,19 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
     }
   }, [pathName]);
 
+  useEffect(() => {
+    console.log(friendsStatus);
+  }, [friendsStatus]);
+
   // Sort friends: online first, then alphabetically
   const sortedFriends = [...activeChat].sort((a, b) => {
     const aStatus = friendsStatus[a.id]?.status || "offline";
     const bStatus = friendsStatus[b.id]?.status || "offline";
-    
+
     // Online users first
     if (aStatus === "online" && bStatus !== "online") return -1;
     if (bStatus === "online" && aStatus !== "online") return 1;
-    
+
     // Then sort alphabetically
     return a.username.localeCompare(b.username);
   });

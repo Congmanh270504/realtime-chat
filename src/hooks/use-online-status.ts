@@ -5,32 +5,28 @@ export function useOnlineStatus() {
   const { userId, isSignedIn } = useAuth();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const updateStatus = async () => {
-    if (!isSignedIn || !userId) return;
-
-    try {
-      await fetch("/api/user/status", {
-        method: "POST",
-      });
-    } catch (error) {
-      console.error("Failed to update online status:", error);
-    }
-  };
-
-  const sendHeartbeat = async () => {
-    if (!isSignedIn || !userId) return;
-
-    try {
-      await fetch("/api/user/heartbeat", {
-        method: "POST",
-      });
-    } catch (error) {
-      console.error("Failed to send heartbeat:", error);
-    }
-  };
-
   useEffect(() => {
     if (isSignedIn && userId) {
+      const updateStatus = async () => {
+        try {
+          await fetch("/api/user/status", {
+            method: "POST",
+          });
+        } catch (error) {
+          console.error("Failed to update online status:", error);
+        }
+      };
+
+      const sendHeartbeat = async () => {
+        try {
+          await fetch("/api/user/heartbeat", {
+            method: "POST",
+          });
+        } catch (error) {
+          console.error("Failed to send heartbeat:", error);
+        }
+      };
+
       // Set initial online status
       updateStatus();
 
@@ -46,10 +42,14 @@ export function useOnlineStatus() {
 
       // Handle page unload to set offline status
       const handleBeforeUnload = () => {
-        navigator.sendBeacon(
-          "/api/user/status",
-          JSON.stringify({ status: "offline" })
-        );
+        // Using sendBeacon with proper Content-Type
+        const blob = new Blob([JSON.stringify({ status: "offline" })], {
+          type: "application/json",
+        });
+        navigator.sendBeacon("/api/user/status", blob);
+
+        // Fallback for debugging
+        console.log("User going offline - sendBeacon sent");
       };
 
       document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -67,6 +67,29 @@ export function useOnlineStatus() {
       };
     }
   }, [isSignedIn, userId]);
+
+  // Return functions for manual use if needed
+  const updateStatus = async () => {
+    if (!isSignedIn || !userId) return;
+    try {
+      await fetch("/api/user/status", {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("Failed to update online status:", error);
+    }
+  };
+
+  const sendHeartbeat = async () => {
+    if (!isSignedIn || !userId) return;
+    try {
+      await fetch("/api/user/heartbeat", {
+        method: "POST",
+      });
+    } catch (error) {
+      console.error("Failed to send heartbeat:", error);
+    }
+  };
 
   return { updateStatus, sendHeartbeat };
 }

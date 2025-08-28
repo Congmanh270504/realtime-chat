@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
 
 // Set user online and update heartbeat
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -38,13 +38,13 @@ export async function GET(req: NextRequest) {
     const status = await redis.get(`user:${targetUserId}:status`);
     const heartbeat = await redis.get(`user:${targetUserId}:heartbeat`);
 
-    // Check if heartbeat has expired (older than 1 hour)
+    // Check if heartbeat has expired (older than 30 minutes)
     if (heartbeat) {
       const lastSeen = parseInt(heartbeat as string);
       const now = Date.now();
-      const hourInMs = 60 * 60 * 1000;
+      const thirtyMinutesInMs = 30 * 60 * 1000;
 
-      if (now - lastSeen > hourInMs) {
+      if (now - lastSeen > thirtyMinutesInMs) {
         // Update status to offline if heartbeat expired
         await redis.set(`user:${targetUserId}:status`, "offline");
         return Response.json({ status: "offline", lastSeen });

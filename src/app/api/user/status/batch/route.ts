@@ -1,4 +1,6 @@
+import { pusherServer } from "@/lib/pusher";
 import { redis } from "@/lib/redis";
+import { toPusherKey } from "@/lib/utils";
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
 
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
       pipeline.get(`user:${id}:heartbeat`);
     });
 
-    const results = await pipeline.exec() as [null | Error, string | null][];
+    const results = (await pipeline.exec()) as [null | Error, string | null][];
 
     // Process results
     for (let i = 0; i < userIds.length; i++) {
@@ -38,7 +40,8 @@ export async function POST(req: NextRequest) {
       const statusIndex = i * 2;
       const heartbeatIndex = i * 2 + 1;
 
-      const status = (results?.[statusIndex]?.[1] as string) || "offline";
+      const status =
+        (results?.[statusIndex]?.[1] as string) === "n" ? "online" : "offline";
       const heartbeat = results?.[heartbeatIndex]?.[1] as string;
 
       let finalStatus = status;
@@ -60,6 +63,12 @@ export async function POST(req: NextRequest) {
         lastSeen,
       };
     }
+
+    await pusherServer.trigger(
+      toPusherKey(`user:${userId}:friend_online_list`),
+      "friend_online_list",
+      statuses
+    );
 
     return Response.json({ statuses });
   } catch (error) {

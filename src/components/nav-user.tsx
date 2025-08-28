@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 import { SignOutButton, useUser } from "@clerk/nextjs";
 import ClientOnly from "./client-only";
+import { OnlineStatusIndicator } from "./online-status-indicator";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
@@ -86,13 +87,27 @@ export function NavUser() {
               >
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <Avatar className="h-8 w-8 rounded-lg">
+                    {/* <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage
                         src={user.imageUrl}
                         alt={user.username ? user.username : "User image"}
                       />
                       <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                    </Avatar>
+                    </Avatar> */}
+                    <div className="relative">
+                      <Avatar className="h-8 w-8 rounded-lg">
+                        <AvatarImage
+                          src={user.imageUrl}
+                          alt={user.username ? user.username : "User image"}
+                        />
+                        <AvatarFallback className="rounded-lg">
+                          CN
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-0.5 -right-0.5">
+                        <OnlineStatusIndicator status="online" size="sm" />
+                      </div>
+                    </div>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-medium">
                         {user.username}

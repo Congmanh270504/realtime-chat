@@ -1,8 +1,7 @@
 import { redis } from "@/lib/redis";
 import { auth } from "@clerk/nextjs/server";
-import { NextRequest } from "next/server";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const { userId } = await auth();
     if (!userId) {
