@@ -19,7 +19,7 @@ import { pusherClient } from "@/lib/pusher";
 import { toPusherKey } from "@/lib/utils";
 import { FriendsWithLastMessage } from "@/types/message";
 import { useOnlineStatus } from "@/hooks/use-online-status";
-
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 interface ClientProviderProps {
   children: React.ReactNode;
   unseenRequestCount: number;
@@ -35,6 +35,7 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
 }) => {
   useOnlineStatus(); // POST /api/user/status 200 in 303ms
   const [requestCount, setRequestCount] = useState(unseenRequestCount);
+  const queryClient = new QueryClient();
 
   // count request add friends data
   useEffect(() => {
@@ -70,40 +71,42 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
   }, [userId]);
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "350px",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar
-        unseenRequestCount={requestCount}
-        initialFriends={initialFriends}
-        userId={userId}
-      />
-      <SidebarInset>
-        <header className="bg-background top-0 flex shrink-0 items-center gap-2 border-b p-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
-          />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="#">All Inboxes</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Inbox</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-        <div className="h-full w-full">{children}</div>
-      </SidebarInset>
-    </SidebarProvider>
+    <QueryClientProvider client={queryClient}>
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "350px",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar
+          unseenRequestCount={requestCount}
+          initialFriends={initialFriends}
+          userId={userId}
+        />
+        <SidebarInset>
+          <header className="bg-background top-0 flex shrink-0 items-center gap-2 border-b p-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator
+              orientation="vertical"
+              className="mr-2 data-[orientation=vertical]:h-4"
+            />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="#">All Inboxes</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Inbox</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </header>
+          <div className="h-full w-full">{children}</div>
+        </SidebarInset>
+      </SidebarProvider>
+    </QueryClientProvider>
   );
 };
 

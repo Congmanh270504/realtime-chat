@@ -40,7 +40,10 @@ export async function POST(req: NextRequest) {
         };
 
         await redis.set(`user:${userData.id}`, JSON.stringify(userData));
-        await redis.set(`user:email:${userData.email}`, userData.id);
+        await redis.set(
+          `user:email:${userData.email}`,
+          JSON.stringify(userData)
+        );
 
         // Set initial offline status
         await redis.set(`user:${userData.id}:status`, "offline");
