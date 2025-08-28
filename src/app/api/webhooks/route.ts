@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
         username,
       } = evt.data;
       try {
-
         // Lưu thông tin user vào Redis
         const userData: UserData = {
           id,
@@ -42,6 +41,9 @@ export async function POST(req: NextRequest) {
 
         await redis.set(`user:${userData.id}`, JSON.stringify(userData));
         await redis.set(`user:email:${userData.email}`, userData.id);
+
+        // Set initial offline status
+        await redis.set(`user:${userData.id}:status`, "offline");
 
         return new Response("User created successfully", { status: 200 });
       } catch (error) {
@@ -59,6 +61,8 @@ export async function POST(req: NextRequest) {
 
         // Xóa user khỏi Redis
         await redis.del(`user:${id}`);
+        await redis.del(`user:${id}:status`);
+        await redis.del(`user:${id}:heartbeat`);
         console.log(`User ${id} deleted from Redis successfully`);
 
         return new Response("User deleted successfully", { status: 200 });

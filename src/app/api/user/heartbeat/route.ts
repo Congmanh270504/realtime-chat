@@ -1,0 +1,25 @@
+import { redis } from "@/lib/redis";
+import { auth } from "@clerk/nextjs/server";
+import { NextRequest } from "next/server";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const now = Date.now();
+
+    // Update heartbeat with 1 hour expiry
+    await redis.setex(`user:${userId}:heartbeat`, 3600, now.toString());
+
+    // Ensure user is marked as online
+    await redis.set(`user:${userId}:status`, "online");
+
+    return new Response("Heartbeat updated", { status: 200 });
+  } catch (error) {
+    console.error("Error updating heartbeat:", error);
+    return new Response("Error updating heartbeat", { status: 500 });
+  }
+}

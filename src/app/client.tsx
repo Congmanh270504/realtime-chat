@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import { pusherClient } from "@/lib/pusher";
 import { toPusherKey } from "@/lib/utils";
 import { FriendsWithLastMessage } from "@/types/message";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 
 interface ClientProviderProps {
   children: React.ReactNode;
@@ -34,6 +35,8 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
   initialFriends,
   userId,
 }) => {
+  
+  useOnlineStatus();
   const [requestCount, setRequestCount] = useState(unseenRequestCount);
 
   // count request add friends data
