@@ -40,14 +40,14 @@ export function useFriendsOnlineStatus(userIds: string[]) {
     }
   }, [userIds]);
 
-  useEffect(() => {
-    fetchFriendsOnlineStatus;
+//   useEffect(() => {
+//     fetchFriendsOnlineStatus;
 
-    // Refresh status every 2 minutes
-    const interval = setInterval(fetchFriendsOnlineStatus, 2 * 60 * 1000);
+//     // Refresh status every 2 minutes
+//     const interval = setInterval(fetchFriendsOnlineStatus, 2 * 60 * 1000);
 
-    return () => clearInterval(interval);
-  }, [fetchFriendsOnlineStatus]);
+//     return () => clearInterval(interval);
+//   }, [fetchFriendsOnlineStatus]);
 
   return {
     friendsStatus,
