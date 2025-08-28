@@ -21,20 +21,41 @@ import {
 import { useState } from "react";
 import type { UserData } from "@/types/user";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface ProfileChatProps {
   showProfile: boolean;
+  chatId: string;
   chatPartner: UserData;
 }
 
 export default function ProfileChat({
   showProfile,
   chatPartner,
+  chatId,
 }: ProfileChatProps) {
   const [mediaExpanded, setMediaExpanded] = useState(true);
   const [chatInfoExpanded, setChatInfoExpanded] = useState(false);
   const [customizeExpanded, setCustomizeExpanded] = useState(false);
   const [privacyExpanded, setPrivacyExpanded] = useState(false);
+
+  const handleDeleteChat = async () => {
+    try {
+      const response = await fetch(`/api/chats`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ chatId }),
+      });
+      const data = await response.json();
+      if (data && data.status) {
+        toast.success(data.message);
+      } else toast.error(data.message);
+    } catch {
+      toast.error("Failed to delete chat");
+    }
+  };
 
   return (
     <div
@@ -194,6 +215,15 @@ export default function ProfileChat({
                 </CollapsibleContent>
               </Collapsible>
             </div>
+          </div>
+          <div className="p-4 flex-shrink-0 ">
+            <Button
+              variant="destructive"
+              className="w-full"
+              onClick={handleDeleteChat}
+            >
+              Delete chat
+            </Button>
           </div>
         </Card>
       </div>

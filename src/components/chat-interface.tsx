@@ -101,6 +101,8 @@ export default function ChatInterface({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  
   const handleAddMessage = async () => {
     if (!input.trim()) return;
 

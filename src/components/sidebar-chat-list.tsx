@@ -22,18 +22,18 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
   const router = useRouter();
   const pathName = usePathname();
   const [unseenMessages, setUnseenMessages] = useState<Message[]>([]);
+  const [isCurrentUserChat, setIsCurrentUserChat] = useState<boolean>(false);
   const [activeChat, setActiveChat] =
     useState<FriendsWithLastMessage[]>(friends);
 
   useEffect(() => {
     pusherClient.subscribe(toPusherKey(`user:${userId}:chats`));
-    // pusherClient.subscribe(toPusherKey(`user:${userId}:friends`));
 
     const chatHandler = (message: ExtendedMessage) => {
       const shouldNotify =
         pathName !== `${chatHrefConstructor(userId, message.senderId)}`;
-      
-      if (!shouldNotify) return;
+
+      if (!shouldNotify || userId === message.senderId) return;
 
       const chatHref = `${chatHrefConstructor(userId, message.senderId)}`;
 
@@ -48,13 +48,33 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
       setActiveChat((prev) => [...prev, newFriend]);
     };
 
+    const chatHandlerAddLastMessage = (message: ExtendedMessage) => {
+      setActiveChat((prev) => {
+        const updatedChat = prev.map((friend) => {
+          if (
+            friend.id === message.receiverId ||
+            friend.id === message.senderId
+          ) {
+            return {
+              ...friend,
+              lastMessage: message,
+            };
+          }
+          return friend;
+        });
+        return updatedChat;
+      });
+      setIsCurrentUserChat(userId === message.senderId);
+    };
     pusherClient.bind("new_message", chatHandler);
+    pusherClient.bind("new_message", chatHandlerAddLastMessage);
     pusherClient.bind("new_friend", newFriendHandler);
     return () => {
       pusherClient.unsubscribe(toPusherKey(`user:${userId}:chats`));
       // pusherClient.unsubscribe(toPusherKey(`user:${userId}:friends`));
       pusherClient.unbind("new_message", chatHandler);
       pusherClient.unbind("new_friend", newFriendHandler);
+      pusherClient.unbind("new_message", chatHandlerAddLastMessage);
     };
   }, [userId, pathName, router]);
 
@@ -90,7 +110,6 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
             className="bg-base-200 shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-lg"
           >
             <div className="flex items-center gap-2">
-              {/* {friend.firstName} {friend.lastName} */}
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage
                   src={friend.imageUrl}
@@ -103,7 +122,9 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
                 <span>{friend.username}</span>
                 <div className="flex items-center gap-1 text-xs text-gray-500">
                   <span className="text-gray-700 text-sm">
-                    {latestMessage.senderId === userId ? "You: " : ""}
+                    {isCurrentUserChat || latestMessage.senderId === userId
+                      ? "You: "
+                      : ""}
                   </span>
                   <span className="mb-0.5">{latestMessage.text}</span>
                 </div>

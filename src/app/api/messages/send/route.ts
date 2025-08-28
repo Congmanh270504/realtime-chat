@@ -5,7 +5,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { toPusherKey } from "@/lib/utils";
-import { pusherClient, pusherServer } from "@/lib/pusher";
+import { pusherServer } from "@/lib/pusher";
 
 export async function POST(request: Request) {
   try {
@@ -53,6 +53,7 @@ export async function POST(request: Request) {
       senderId: user.id,
       text,
       timestamp: Date.now(),
+      receiverId: friendId
     };
     const message = messageValidator.parse(messageData);
 
@@ -65,19 +66,30 @@ export async function POST(request: Request) {
 
       // Sau đó mới trigger Pusher events
       const chatKey = toPusherKey(`chat:${chatId}`);
-      const userKey = toPusherKey(`user:${friendId}:chats`);
+      const friendKey = toPusherKey(`user:${friendId}:chats`);
+      const currentUserKey = toPusherKey(`user:${user.id}:chats`);
+      await Promise.all([
+        // notify all clients in the chat
+        await pusherServer.trigger(chatKey, "incoming_message", message),
 
-      // notify all clients in the chat
-      await pusherServer.trigger(chatKey, "incoming_message", message);
+        // notify the recipient's client
+        await pusherServer.trigger(friendKey, "new_message", {
+          ...message,
+          sender: {
+            username: sender.username,
+            imageUrl: sender.imageUrl,
+          },
+        }),
 
-      // notify the recipient's client
-      await pusherServer.trigger(userKey, "new_message", {
-        ...message,
-        sender: {
-          username: sender.username,
-          imageUrl: sender.imageUrl,
-        },
-      });
+        await pusherServer.trigger(currentUserKey, "new_message", {
+          ...message,
+          sender: {
+            username: sender.username,
+            imageUrl: sender.imageUrl,
+          },
+        }),
+        
+      ]);
     } catch (pusherError) {
       console.error("Pusher trigger error:", pusherError);
       // Vẫn trả về success vì message đã được lưu

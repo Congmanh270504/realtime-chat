@@ -29,7 +29,11 @@ const ChatLayout = ({
         handleCloseProfile={handleCloseProfile}
       />
       {showProfile && (
-        <ProfileChat showProfile={showProfile} chatPartner={chatPartner} />
+        <ProfileChat
+          showProfile={showProfile}
+          chatPartner={chatPartner}
+          chatId={chatId}
+        />
       )}
     </div>
   );
