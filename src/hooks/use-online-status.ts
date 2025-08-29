@@ -9,8 +9,12 @@ export function useOnlineStatus() {
     if (isSignedIn && userId) {
       const updateStatus = async () => {
         try {
-          await fetch("/api/user/status", {
+          await fetch("/api/user/status/online", {
             method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ currentUserId: userId }),
           });
         } catch (error) {
           console.error("Failed to update online status:", error);
@@ -43,10 +47,10 @@ export function useOnlineStatus() {
       // Handle page unload to set offline status
       const handleBeforeUnload = () => {
         // Using sendBeacon with proper Content-Type
-        const blob = new Blob([JSON.stringify({ status: "offline" })], {
+        const blob = new Blob([JSON.stringify({ currentUserId: userId })], {
           type: "application/json",
         });
-        navigator.sendBeacon("/api/user/status", blob);
+        navigator.sendBeacon("/api/user/status/offline", blob);
 
         // Fallback for debugging
         console.log("User going offline - sendBeacon sent");

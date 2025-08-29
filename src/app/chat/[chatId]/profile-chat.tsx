@@ -8,21 +8,30 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import {
-  User,
-  Bell,
-  Search,
-  ChevronDown,
-  ChevronUp,
-  Shield,
-  ImageIcon,
-  FileText,
-} from "lucide-react";
+// import {
+//   User,
+//   Bell,
+//   Search,
+//   ChevronDown,
+//   ChevronUp,
+//   Shield,
+//   ImageIcon,
+//   FileText,
+// } from "lucide-react";
 import { useState } from "react";
 import type { UserData } from "@/types/user";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  ChevronDown,
+  ChevronUp,
+  Search,
+  ImageIcon,
+  FileText,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@radix-ui/react-separator";
 interface ProfileChatProps {
   showProfile: boolean;
   chatId: string;
@@ -38,7 +47,19 @@ export default function ProfileChat({
   const [chatInfoExpanded, setChatInfoExpanded] = useState(false);
   const [customizeExpanded, setCustomizeExpanded] = useState(false);
   const [privacyExpanded, setPrivacyExpanded] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    chatInfo: false,
+    customization: false,
+    files: true,
+    privacy: false,
+  });
 
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
   const handleDeleteChat = async () => {
     try {
       const response = await fetch(`/api/chats`, {
@@ -58,175 +79,154 @@ export default function ProfileChat({
   };
 
   return (
-    <div
-      className={cn(
-        "w-1/3 bg-background h-full border rounded-lg flex flex-col",
-        showProfile
-          ? "animate-fade-left animate-once"
-          : "animate-fade-right animate-once"
-      )}
-    >
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Card className="border-0 shadow-none flex-1 flex flex-col overflow-hidden">
-          {/* Profile Header */}
-          <div className="flex flex-col items-center p-6 space-y-4 flex-shrink-0">
-            <Avatar className="w-20 h-20">
-              <AvatarImage
-                src={chatPartner?.imageUrl || "/placeholder.svg"}
-                alt={chatPartner?.username || "Profile"}
-              />
-              <AvatarFallback>
-                {chatPartner?.username?.slice(0, 2).toUpperCase() || "??"}
-              </AvatarFallback>
+    <div className="w-80 bg-gray-50 rounded-2xl">
+      <ScrollArea className="h-full">
+        <div className="p-4 space-y-6">
+          {/* Profile Section */}
+          <div className="text-center">
+            <Avatar className="w-20 h-20 mx-auto mb-3">
+              <AvatarImage src="/vietnamese-man-profile-sunset.png" />
+              <AvatarFallback>TC</AvatarFallback>
             </Avatar>
-
-            <div className="text-center space-y-1">
-              <h1 className="text-lg font-semibold">
-                {chatPartner?.username || "Unknown User"}
-              </h1>
-              <p className="text-sm text-muted-foreground">Đang hoạt động</p>
-            </div>
-
-            {/* Encryption Status */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Shield className="w-4 h-4" />
-              <span>Được mã hóa đầu cuối</span>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-8 pt-4">
-              <div className="flex flex-col items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-muted"
-                >
-                  <User className="w-5 h-5" />
-                </Button>
-                <span className="text-xs text-center">Trang cá nhân</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-muted"
-                >
-                  <Bell className="w-5 h-5" />
-                </Button>
-                <span className="text-xs text-center">Tắt thông báo</span>
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-muted"
-                >
-                  <Search className="w-5 h-5" />
-                </Button>
-                <span className="text-xs text-center">Tìm kiếm</span>
-              </div>
-            </div>
+            <h3 className="font-semibold text-gray-900 mb-1">Trần Công Mạnh</h3>
+            <p className="text-sm text-gray-600 flex items-center justify-center gap-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              Đang mở hóa đầu cuối
+            </p>
           </div>
 
-          {/* Collapsible Sections */}
-          <div className="flex-1 overflow-y-auto px-4">
-            <div className="space-y-1">
-              {/* Chat Information */}
-              <Collapsible
-                open={chatInfoExpanded}
-                onOpenChange={setChatInfoExpanded}
-              >
-                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-muted/50 transition-colors">
-                  <span className="font-medium">Thông tin về đoạn chat</span>
-                  {chatInfoExpanded ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </CollapsibleTrigger>
-                <CollapsibleContent className="px-4 pb-2">
-                  <div className="text-sm text-muted-foreground">
-                    Chat information content would go here
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-
-              {/* Customize Chat */}
-              <Collapsible
-                open={customizeExpanded}
-                onOpenChange={setCustomizeExpanded}
-              >
-                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-muted/50 transition-colors">
-                  <span className="font-medium">Tùy chỉnh đoạn chat</span>
-                  {customizeExpanded ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </CollapsibleTrigger>
-                <CollapsibleContent className="px-4 pb-2">
-                  <div className="text-sm text-muted-foreground">
-                    Chat customization options would go here
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-
-              {/* Media & Files */}
-              <Collapsible open={mediaExpanded} onOpenChange={setMediaExpanded}>
-                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-muted/50 transition-colors">
-                  <span className="font-medium">File phương tiện & file</span>
-                  {mediaExpanded ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </CollapsibleTrigger>
-                <CollapsibleContent className="px-4 pb-2 space-y-2">
-                  <div className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-md cursor-pointer">
-                    <ImageIcon className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-sm">File phương tiện</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded-md cursor-pointer">
-                    <FileText className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-sm">File</span>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-
-              {/* Privacy & Support */}
-              <Collapsible
-                open={privacyExpanded}
-                onOpenChange={setPrivacyExpanded}
-              >
-                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-muted/50 transition-colors">
-                  <span className="font-medium">Quyền riêng tư và hỗ trợ</span>
-                  {privacyExpanded ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                </CollapsibleTrigger>
-                <CollapsibleContent className="px-4 pb-2">
-                  <div className="text-sm text-muted-foreground">
-                    Privacy and support options would go here
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Tìm kiếm"
+              className="pl-10 bg-white border-gray-200"
+            />
           </div>
-          <div className="p-4 flex-shrink-0 ">
+
+          {/* Chat Info Section */}
+          <div className="space-y-2">
             <Button
-              variant="destructive"
-              className="w-full"
-              onClick={handleDeleteChat}
+              variant="ghost"
+              className="w-full justify-between p-3 h-auto"
+              onClick={() => toggleSection("chatInfo")}
             >
-              Delete chat
+              <span className="font-medium text-gray-900">
+                Thông tin về đoạn chat
+              </span>
+              {expandedSections.chatInfo ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
             </Button>
+
+            {expandedSections.chatInfo && (
+              <div className="pl-3 space-y-2">
+                <div className="text-sm text-gray-600">
+                  Chat details content...
+                </div>
+              </div>
+            )}
           </div>
-        </Card>
-      </div>
+
+          <Separator />
+
+          {/* Customization Section */}
+          <div className="space-y-2">
+            <Button
+              variant="ghost"
+              className="w-full justify-between p-3 h-auto"
+              onClick={() => toggleSection("customization")}
+            >
+              <span className="font-medium text-gray-900">
+                Tùy chỉnh đoạn chat
+              </span>
+              {expandedSections.customization ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Button>
+
+            {expandedSections.customization && (
+              <div className="pl-3 space-y-2">
+                <div className="text-sm text-gray-600">
+                  Customization options...
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Files Section */}
+          <div className="space-y-2">
+            <Button
+              variant="ghost"
+              className="w-full justify-between p-3 h-auto"
+              onClick={() => toggleSection("files")}
+            >
+              <span className="font-medium text-gray-900">
+                File phương tiện & file
+              </span>
+              {expandedSections.files ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Button>
+
+            {expandedSections.files && (
+              <div className="pl-3 space-y-3">
+                <div className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <ImageIcon className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <span className="text-sm text-gray-700">
+                    File phương tiện
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg cursor-pointer">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-gray-600" />
+                  </div>
+                  <span className="text-sm text-gray-700">File</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Privacy Section */}
+          <div className="space-y-2">
+            <Button
+              variant="ghost"
+              className="w-full justify-between p-3 h-auto"
+              onClick={() => toggleSection("privacy")}
+            >
+              <span className="font-medium text-gray-900">
+                Quyền riêng tư và hỗ trợ
+              </span>
+              {expandedSections.privacy ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Button>
+
+            {expandedSections.privacy && (
+              <div className="pl-3 space-y-2">
+                <div className="text-sm text-gray-600">
+                  Privacy and support options...
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 }

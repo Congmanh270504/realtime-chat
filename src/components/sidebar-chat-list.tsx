@@ -7,8 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { pusherClient } from "@/lib/pusher";
 import { toast } from "sonner";
 import CustomToast from "./custom-toast";
-import { OnlineStatusIndicator } from "./online-status-indicator";
 import { useFriendsOnlineStatus } from "@/hooks/use-friends-online-status";
+import { OnlineStatusUsersSidebar } from "./online-status-users-sidebar";
 
 interface SidebarChatListProps {
   friends: FriendsWithLastMessage[];
@@ -29,7 +29,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
     useState<FriendsWithLastMessage[]>(friends);
   const [isCurrentUserChat, setIsCurrentUserChat] = useState<boolean>(false);
 
-  // // Get online status for all friends
+  // Get online status for all friends
   const friendIds = activeChat.map((friend) => friend.id);
   const { friendsStatus: friendsStatusData } =
     useFriendsOnlineStatus(friendIds);
@@ -46,11 +46,12 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
     const handleFriendOnlineList = (data: {
       [userId: string]: { status: string; lastSeen: number | null };
     }) => {
-      console.log("Received friend status update:", data);
+      // console.log("Received friend status update:", data);
       setFriendsStatus((prev) => {
         return { ...prev, ...data };
       });
     };
+
     pusherClient.bind("friend_online_list", handleFriendOnlineList);
     return () => {
       pusherClient.unbind("friend_online_list", handleFriendOnlineList);
@@ -119,9 +120,6 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
     }
   }, [pathName]);
 
-  useEffect(() => {
-    console.log(friendsStatus);
-  }, [friendsStatus]);
 
   // Sort friends: online first, then alphabetically
   const sortedFriends = [...activeChat].sort((a, b) => {
@@ -172,7 +170,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
                 </Avatar>
                 {/* Online status indicator positioned at bottom-right of avatar */}
                 <div className="absolute -bottom-0.5 -right-0.5">
-                  <OnlineStatusIndicator
+                  <OnlineStatusUsersSidebar
                     status={userStatus?.status || "offline"}
                     lastSeen={userStatus?.lastSeen}
                     size="sm"

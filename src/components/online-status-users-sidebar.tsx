@@ -1,18 +1,18 @@
 import React from "react";
 
-interface OnlineStatusIndicatorProps {
+interface OnlineStatusUsersSidebarProps {
   status: string;
   lastSeen?: number | null;
   size?: "sm" | "md" | "lg";
   showText?: boolean;
 }
 
-export function OnlineStatusIndicator({ 
-  status, 
-  lastSeen, 
-  size = "md", 
-  showText = false 
-}: OnlineStatusIndicatorProps) {
+export function OnlineStatusUsersSidebar({
+  status,
+  lastSeen,
+  size = "md",
+  showText = false,
+}: OnlineStatusUsersSidebarProps) {
   const getStatusColor = () => {
     switch (status) {
       case "online":
@@ -39,7 +39,7 @@ export function OnlineStatusIndicator({
 
   const formatLastSeen = () => {
     if (!lastSeen || status === "online") return "";
-    
+
     const now = Date.now();
     const diff = now - lastSeen;
     const minutes = Math.floor(diff / (1000 * 60));

@@ -27,7 +27,8 @@ import {
 } from "@/components/ui/sidebar";
 import { SignOutButton, useUser } from "@clerk/nextjs";
 import ClientOnly from "./client-only";
-import { OnlineStatusIndicator } from "./online-status-indicator";
+import { OnlineStatusIndicator } from "./online-status-partner";
+import { OnlineStatusUsersSidebar } from "./online-status-users-sidebar";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
@@ -105,7 +106,7 @@ export function NavUser() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-0.5 -right-0.5">
-                        <OnlineStatusIndicator status="online" size="sm" />
+                        <OnlineStatusUsersSidebar status="online" size="sm" />
                       </div>
                     </div>
                     <div className="grid flex-1 text-left text-sm leading-tight">

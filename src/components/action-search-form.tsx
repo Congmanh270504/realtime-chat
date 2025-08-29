@@ -27,22 +27,23 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
+import { UserData } from "@/types/user";
 
 interface UserSearchResult {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    image?: string;
-  } | null;
+  user: UserData | null;
   found: boolean;
+  reason?: string;
+}
+
+interface UserSuggestionsResult {
+  users: UserData[];
 }
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
 });
 
-function UnifiedSearchForm() {
+function ActionSearchForm() {
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [selectedUser, setSelectedUser] = useState<
@@ -74,12 +75,34 @@ function UnifiedSearchForm() {
       const response = await fetch(
         `/api/search/user?email=${encodeURIComponent(debouncedQuery)}`
       );
-      if (!response.ok) throw new Error("Network response was not ok");
+      if (!response.status) throw new Error("Network response was not ok");
       return response.json();
     },
     enabled: !!debouncedQuery && isValidEmail(debouncedQuery),
     refetchOnWindowFocus: false,
   });
+
+  // Search suggestions by email pattern
+  const { data: suggestionsResult, isLoading: isLoadingSuggestions } = useQuery(
+    {
+      queryKey: ["searchSuggestions", debouncedQuery],
+      queryFn: async (): Promise<UserSuggestionsResult> => {
+        if (!debouncedQuery || debouncedQuery.length < 2) {
+          return { users: [] };
+        }
+
+        const response = await fetch(
+          `/api/search/users/suggestions?pattern=${encodeURIComponent(
+            debouncedQuery
+          )}&limit=5`
+        );
+        if (!response.ok) throw new Error("Network response was not ok");
+        return response.json();
+      },
+      enabled: !!debouncedQuery && debouncedQuery.length >= 2,
+      refetchOnWindowFocus: false,
+    }
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -174,11 +197,7 @@ function UnifiedSearchForm() {
     },
   };
 
-  const shouldShowResults =
-    isFocused &&
-    debouncedQuery &&
-    isValidEmail(debouncedQuery) &&
-    !selectedUser;
+  const shouldShowResults = isFocused && debouncedQuery && !selectedUser;
 
   return (
     <div className="w-full max-w-xl mx-auto">
@@ -262,18 +281,19 @@ function UnifiedSearchForm() {
                         exit="exit"
                       >
                         <motion.div variants={item}>
+                          {/* Exact email match */}
                           {searchResult?.found && searchResult.user ? (
                             <div
-                              className="px-4 py-3 hover:bg-accent cursor-pointer flex items-center gap-3"
+                              className="px-4 py-3 hover:bg-accent cursor-pointer flex items-center gap-3 border-b"
                               onClick={() =>
                                 handleSelectUser(searchResult.user)
                               }
                             >
                               <div className="flex-shrink-0">
-                                {searchResult.user.image ? (
+                                {searchResult.user.imageUrl ? (
                                   <Image
-                                    src={searchResult.user.image}
-                                    alt={searchResult.user.name}
+                                    src={searchResult.user.imageUrl}
+                                    alt={`${searchResult.user.firstName} ${searchResult.user.lastName}`}
                                     width={32}
                                     height={32}
                                     className="w-8 h-8 rounded-full"
@@ -286,7 +306,8 @@ function UnifiedSearchForm() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-foreground truncate">
-                                  {searchResult.user.name}
+                                  {searchResult.user.firstName}{" "}
+                                  {searchResult.user.lastName}
                                 </p>
                                 <p className="text-xs text-muted-foreground truncate">
                                   {searchResult.user.email}
@@ -294,14 +315,65 @@ function UnifiedSearchForm() {
                               </div>
                               <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                             </div>
-                          ) : searchResult && !searchResult.found ? (
+                          ) : null}
+
+                          {/* Email suggestions */}
+                          {suggestionsResult?.users?.map((user) => (
+                            <div
+                              key={user.id}
+                              className="px-4 py-3 hover:bg-accent cursor-pointer flex items-center gap-3"
+                              onClick={() => handleSelectUser(user)}
+                            >
+                              <div className="flex-shrink-0">
+                                {user.imageUrl ? (
+                                  <Image
+                                    src={user.imageUrl}
+                                    alt={`${user.firstName} ${user.lastName}`}
+                                    width={32}
+                                    height={32}
+                                    className="w-8 h-8 rounded-full"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <User className="h-4 w-4 text-primary" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">
+                                  {user.firstName} {user.lastName}
+                                </p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {user.email}
+                                </p>
+                              </div>
+                              <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            </div>
+                          ))}
+
+                          {/* No results message */}
+                          {!isLoading &&
+                          !isLoadingSuggestions &&
+                          !searchResult?.found &&
+                          (!suggestionsResult?.users ||
+                            suggestionsResult.users.length === 0) &&
+                          debouncedQuery.length >= 2 ? (
                             <div className="px-4 py-3 flex items-center gap-3 text-muted-foreground">
                               <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
                               <span className="text-sm">
-                                No user found with this email
+                                {searchResult?.reason ||
+                                  `No users found matching "${debouncedQuery}"`}
                               </span>
                             </div>
                           ) : null}
+
+                          {/* Loading state */}
+                          {(isLoading || isLoadingSuggestions) && (
+                            <div className="px-4 py-3 flex items-center gap-3 text-muted-foreground">
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                              <span className="text-sm">Searching...</span>
+                            </div>
+                          )}
                         </motion.div>
                       </motion.div>
                     )}
@@ -323,10 +395,10 @@ function UnifiedSearchForm() {
               >
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0">
-                    {selectedUser.image ? (
+                    {selectedUser.imageUrl ? (
                       <Image
-                        src={selectedUser.image}
-                        alt={selectedUser.name}
+                        src={selectedUser.imageUrl}
+                        alt={`${selectedUser.firstName} ${selectedUser.lastName}`}
                         width={40}
                         height={40}
                         className="w-10 h-10 rounded-full"
@@ -339,7 +411,7 @@ function UnifiedSearchForm() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-foreground">
-                      {selectedUser.name}
+                      {selectedUser.firstName} {selectedUser.lastName}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {selectedUser.email}
@@ -384,4 +456,4 @@ function UnifiedSearchForm() {
   );
 }
 
-export default UnifiedSearchForm;
+export default ActionSearchForm;

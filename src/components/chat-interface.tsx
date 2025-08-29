@@ -35,6 +35,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import ChatReactIcons from "./chat-react-icons";
 import Emoji from "./emoji";
 import { toast } from "sonner";
+import { OnlineStatusIndicator } from "./online-status-partner";
 
 interface ChatInterfaceProps {
   initialMessages: Message[];
@@ -57,7 +58,7 @@ export default function ChatInterface({
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  
+
   useEffect(() => {
     // Đảm bảo kết nối tới Pusher
     const chatChannel = toPusherKey(`chat:${chatId}`);
@@ -103,7 +104,6 @@ export default function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  
   const handleAddMessage = async () => {
     if (!input.trim()) return;
 
@@ -155,8 +155,8 @@ export default function ChatInterface({
   };
 
   return (
-    <div className="h-full flex flex-col w-full relative border rounded-lg overflow-hidden">
-      <div className="sticky top-3 right-0 z-10 bg-green-100 px-6 py-4 border-b flex items-center justify-between rounded-2xl mx-6 mt-6 flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-white rounded-2xl relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 z-10 bg-green-100 px-6 py-4 border-b flex items-center justify-between rounded-2xl mx-6 mt-6 flex-shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8 rounded-lg">
             <AvatarImage
@@ -175,7 +175,12 @@ export default function ChatInterface({
             <h2 className="font-semibold text-gray-900">
               {chatPartner.username}
             </h2>
-            <p className="text-sm text-gray-600">Đang hoạt động</p>
+            <OnlineStatusIndicator
+              partnerId={chatPartner.id}
+              currentUserId={currentUser.id}
+              showText={true}
+              size="sm"
+            />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -203,145 +208,147 @@ export default function ChatInterface({
           </Button>
         </div>
       </div>
-
-      <ScrollArea className="flex-1 px-6 pt-4 pb-2 overflow-hidden ">
-        <div className="space-y-4 w-full px-4 md:space-y-6">
-          {messages.map((message, index) => {
-            const isCurrentUser = message.senderId === currentUser.id;
-            const previousMessage = index > 0 ? messages[index - 1] : undefined;
-            const timeDivider = shouldShowTimeDivider(
-              message.timestamp,
-              previousMessage?.timestamp
-            );
-            const isHovered = hoveredMessageId === message.id;
-            return (
-              <div key={`${message.id}-${message.timestamp}`}>
-                {/* Time Divider */}
-                {timeDivider.show && timeDivider.content && (
-                  <TimeDivider content={timeDivider.content} />
-                )}
-
-                {/* Message */}
-                <div
-                  className={cn(
-                    "flex w-full",
-                    isCurrentUser ? "justify-end" : "justify-start"
+      <div className="absolute top-[73px] bottom-[73px] left-0 right-0 overflow-hidden">
+        <ScrollArea className="h-full ">
+          <div className="p-4 space-y-4 md:space-y-6">
+            {messages.map((message, index) => {
+              const isCurrentUser = message.senderId === currentUser.id;
+              const previousMessage =
+                index > 0 ? messages[index - 1] : undefined;
+              const timeDivider = shouldShowTimeDivider(
+                message.timestamp,
+                previousMessage?.timestamp
+              );
+              const isHovered = hoveredMessageId === message.id;
+              return (
+                <div key={`${message.id}-${message.timestamp}`}>
+                  {/* Time Divider */}
+                  {timeDivider.show && timeDivider.content && (
+                    <TimeDivider content={timeDivider.content} />
                   )}
-                  onMouseEnter={() => setHoveredMessageId(message.id)}
-                  onMouseLeave={() => setHoveredMessageId(null)}
-                >
+
+                  {/* Message */}
                   <div
                     className={cn(
-                      "flex gap-3 ",
-                      isCurrentUser && "flex-row-reverse",
-                      isMobile ? "w-full" : ""
+                      "flex w-full",
+                      isCurrentUser ? "justify-end" : "justify-start"
                     )}
+                    onMouseEnter={() => setHoveredMessageId(message.id)}
+                    onMouseLeave={() => setHoveredMessageId(null)}
                   >
-                    {!isCurrentUser && (
-                      // <div className="h-8 w-8 rounded-full bg-primary flex-shrink-0" />
-                      <Avatar className="h-8 w-8 rounded-lg">
-                        <AvatarImage
-                          src={chatPartner.imageUrl}
-                          alt={
-                            chatPartner.username
-                              ? chatPartner.username
-                              : "User image"
-                          }
-                        />
-                        <AvatarFallback className="rounded-lg">
-                          {" "}
-                          {chatPartner.username.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                    <div className="space-y-2 flex w-full gap-2 max-w-xl">
-                      <div
-                        className={cn(
-                          "w-full",
-                          isCurrentUser ? "order-2" : "order-1"
-                        )}
-                      >
+                    <div
+                      className={cn(
+                        "flex gap-3 ",
+                        isCurrentUser && "flex-row-reverse",
+                        isMobile ? "w-full" : ""
+                      )}
+                    >
+                      {!isCurrentUser && (
+                        // <div className="h-8 w-8 rounded-full bg-primary flex-shrink-0" />
+                        <Avatar className="h-8 w-8 rounded-lg">
+                          <AvatarImage
+                            src={chatPartner.imageUrl}
+                            alt={
+                              chatPartner.username
+                                ? chatPartner.username
+                                : "User image"
+                            }
+                          />
+                          <AvatarFallback className="rounded-lg">
+                            {" "}
+                            {chatPartner.username.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      <div className="space-y-2 flex w-full gap-2 max-w-xl">
                         <div
                           className={cn(
-                            "flex items-center gap-2",
-                            isCurrentUser && "flex-row-reverse"
-                          )}
-                        >
-                          <span className="text-sm font-medium">
-                            {isCurrentUser ? null : chatPartner.username}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {formatTimestamp(message.timestamp)}
-                          </span>
-                        </div>
-                        <div
-                          className={cn(
-                            "flex items-center gap-2",
-                            isCurrentUser && "flex-row-reverse"
+                            "w-full",
+                            isCurrentUser ? "order-2" : "order-1"
                           )}
                         >
                           <div
                             className={cn(
-                              "p-3 rounded-lg",
-                              !isCurrentUser
-                                ? "bg-muted/50"
-                                : "bg-primary text-primary-foreground"
+                              "flex items-center gap-2",
+                              isCurrentUser && "flex-row-reverse"
                             )}
                           >
-                            <p className="text-sm whitespace-pre-wrap">
-                              {message.text}
-                            </p>
+                            <span className="text-sm font-medium">
+                              {isCurrentUser ? null : chatPartner.username}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {formatTimestamp(message.timestamp)}
+                            </span>
                           </div>
-                          {isMobile && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger>
-                                <EllipsisVertical className="h-6 w-6 bg-gray-300 rounded-full p-1" />
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent>
-                                <DropdownMenuItem>
-                                  Copy
-                                  <Copy className="h-4 w-4" />
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  {" "}
-                                  Delete
-                                  <Trash className="h-4 w-4 text-red-500" />
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  Like
-                                  <ThumbsUp className="h-4 w-4" />
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  DisLike
-                                  <ThumbsDown className="h-4 w-4" />
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                          <div
+                            className={cn(
+                              "flex items-center gap-2",
+                              isCurrentUser && "flex-row-reverse"
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                "p-3 rounded-lg",
+                                !isCurrentUser
+                                  ? "bg-muted/50"
+                                  : "bg-primary text-primary-foreground"
+                              )}
+                            >
+                              <p className="text-sm whitespace-pre-wrap">
+                                {message.text}
+                              </p>
+                            </div>
+                            {isMobile && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger>
+                                  <EllipsisVertical className="h-6 w-6 bg-gray-300 rounded-full p-1" />
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                  <DropdownMenuItem>
+                                    Copy
+                                    <Copy className="h-4 w-4" />
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    {" "}
+                                    Delete
+                                    <Trash className="h-4 w-4 text-red-500" />
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    Like
+                                    <ThumbsUp className="h-4 w-4" />
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    DisLike
+                                    <ThumbsDown className="h-4 w-4" />
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
                         </div>
+                        {!isMobile && (
+                          <div
+                            className={cn(
+                              "flex items-center transition-opacity duration-200",
+                              isCurrentUser ? "order-1" : "order-2",
+                              isHovered ? "opacity-100" : "opacity-0"
+                            )}
+                          >
+                            <ChatReactIcons />
+                          </div>
+                        )}
                       </div>
-                      {!isMobile && (
-                        <div
-                          className={cn(
-                            "flex items-center transition-opacity duration-200",
-                            isCurrentUser ? "order-1" : "order-2",
-                            isHovered ? "opacity-100" : "opacity-0"
-                          )}
-                        >
-                          <ChatReactIcons />
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+      </div>
       {/* input chat */}
-      <div className="px-6 py-4 border-t bg-background flex-shrink-0 ">
+      <div className="absolute bottom-0 left-0 right-0 z-10 p-4 border-t border-gray-200 bg-white rounded-b-2xl ">
         <div className="flex gap-2 items-center">
           <Textarea
             placeholder="Type a message"

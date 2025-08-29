@@ -20,7 +20,7 @@ const ChatLayout = ({
   const [showProfile, setShowProfile] = useState(true);
   const handleCloseProfile = () => setShowProfile(!showProfile);
   return (
-    <div className="flex h-[90vh] w-full gap-4 p-4 mt-4 max-2xl:mt-10">
+    <div className="flex h-screen bg-gray-100 overflow-hidden p-4 gap-4 max-2xl:mt-10">
       <ChatInterface
         chatId={chatId}
         initialMessages={initialMessages}
