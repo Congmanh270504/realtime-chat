@@ -13,7 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/navbar/app-sidebar";
 import { useEffect, useState } from "react";
 import { pusherClient } from "@/lib/pusher";
 import { toPusherKey } from "@/lib/utils";

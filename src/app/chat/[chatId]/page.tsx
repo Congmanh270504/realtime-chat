@@ -1,4 +1,3 @@
-import ChatInterface from "@/components/chat-interface";
 import { fetchRedis } from "@/lib/hepper/redis";
 import { messageArrayValidator } from "@/lib/validation/message";
 import { Message } from "@/types/message";
@@ -6,13 +5,54 @@ import { UserData } from "@/types/user";
 import { SignIn } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import React, { Suspense } from "react";
-import Loading from "./loading";
-import ProfileChat from "./profile-chat";
-import ChatLayout from "./chat-layout";
+import Loading from "../../../components/chat/loading";
+import ChatLayout from "../../../components/chat/chat-layout";
+import { Metadata } from "next";
+
 interface PageProps {
   params: Promise<{
     chatId: string;
   }>;
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { chatId } = await params;
+  const user = await currentUser();
+
+  if (!user) {
+    return {
+      title: "Chat - Please sign in",
+      description: "Real-time chat application",
+    };
+  }
+
+  const [userId1, userId2] = chatId.split("--");
+
+  if (userId1 !== user.id && userId2 !== user.id) {
+    return {
+      title: "Chat - Access Denied",
+      description: "You do not have access to this chat",
+    };
+  }
+
+  const chatPartnerId = userId1 === user.id ? userId2 : userId1;
+
+  try {
+    const chatPartnerRaw = await fetchRedis("get", `user:${chatPartnerId}`);
+    const chatPartner = JSON.parse(chatPartnerRaw) as UserData;
+
+    return {
+      title: `Chat with ${chatPartner.username} - Thomas`,
+      description: `Chat conversation with ${chatPartner.username}`,
+    };
+  } catch {
+    return {
+      title: "Chat - Thomas",
+      description: "Real-time chat application",
+    };
+  }
 }
 async function getChatMessages(chatId: string) {
   try {

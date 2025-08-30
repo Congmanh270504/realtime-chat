@@ -26,9 +26,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { SignOutButton, useUser } from "@clerk/nextjs";
-import ClientOnly from "./client-only";
-import { OnlineStatusIndicator } from "./online-status-partner";
-import { OnlineStatusUsersSidebar } from "./online-status-users-sidebar";
+import ClientOnly from "../client-only";
+import { OnlineStatusIndicator } from "../online-status-partner";
+import { OnlineStatusUsersSidebar } from "../online-status-users-sidebar";
 
 export function NavUser() {
   const { isMobile } = useSidebar();

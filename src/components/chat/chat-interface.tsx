@@ -14,28 +14,27 @@ import {
   Copy,
   ThumbsUp,
   ThumbsDown,
-  Phone,
-  Video,
   Info,
   Send,
   EllipsisVertical,
   Trash,
 } from "lucide-react";
 import { cn, toPusherKey } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Message } from "@/types/message";
 import { UserData } from "@/types/user";
 import {
   formatTimestamp,
   shouldShowTimeDivider,
 } from "@/lib/hepper/format-time";
-import { TimeDivider } from "./time-divider";
+import { TimeDivider } from "../time-divider";
 import { pusherClient } from "@/lib/pusher";
 import { useIsMobile } from "@/hooks/use-mobile";
-import ChatReactIcons from "./chat-react-icons";
-import Emoji from "./emoji";
+import ChatReactIcons from "../chat-react-icons";
+import Emoji from "../emoji";
 import { toast } from "sonner";
-import { OnlineStatusIndicator } from "./online-status-partner";
+import { OnlineStatusIndicator } from "../online-status-partner";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 interface ChatInterfaceProps {
   initialMessages: Message[];
@@ -59,6 +58,13 @@ export default function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
+  // Hook quản lý title
+  const { changeTitle } = useDocumentTitle({
+    newMessageTitle: `💬 New message from ${chatPartner.username}`,
+    originalTitle: `Chat with ${chatPartner.username} - Thomas`,
+    resetDelay: 10000,
+  });
+
   useEffect(() => {
     // Đảm bảo kết nối tới Pusher
     const chatChannel = toPusherKey(`chat:${chatId}`);
@@ -66,6 +72,12 @@ export default function ChatInterface({
     pusherClient.subscribe(chatChannel);
 
     const messageHandler = (data: Message) => {
+      // Kiểm tra nếu tin nhắn không phải từ người dùng hiện tại
+      if (data.senderId !== currentUser.id) {
+        // Thay đổi title khi có tin nhắn mới từ người khác
+        changeTitle();
+      }
+
       setMessages((prev) => {
         // Tìm và thay thế optimistic message nếu có
         const optimisticIndex = prev.findIndex(
@@ -97,7 +109,7 @@ export default function ChatInterface({
       pusherClient.unsubscribe(chatChannel);
       pusherClient.unbind("incoming_message", messageHandler);
     };
-  }, [chatId]);
+  }, [chatId, currentUser.id, chatPartner.username, changeTitle]);
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
@@ -155,14 +167,16 @@ export default function ChatInterface({
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-white rounded-2xl relative overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 z-10 bg-green-100 px-6 py-4 border-b flex items-center justify-between rounded-2xl mx-6 mt-6 flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-white rounded-2xl relative h-full overflow-hidden shadow-lg">
+      {/* Chat Header - Sticky at top */}
+      <div className="absolute top-0 left-0 right-0 z-10 bg-green-100 px-6 py-4 border-b flex items-center justify-between rounded-t-2xl flex-shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8 rounded-lg">
             <AvatarImage
               src={
                 chatPartner.imageUrl ||
-                "/placeholder.svg?height=32&width=32&query=user avatar"
+                "/placeholder.svg?height=32&width=32&query=user avatar" ||
+                "/placeholder.svg"
               }
               alt={"User image"}
             />
@@ -184,7 +198,7 @@ export default function ChatInterface({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
+          {/* <Button
             variant="ghost"
             size="icon"
             className="h-10 w-10 text-green-600 hover:bg-green-200"
@@ -197,7 +211,7 @@ export default function ChatInterface({
             className="h-10 w-10 text-green-600 hover:bg-green-200"
           >
             <Video className="h-5 w-5" />
-          </Button>
+          </Button> */}
           <Button
             variant="ghost"
             size="icon"
@@ -208,8 +222,10 @@ export default function ChatInterface({
           </Button>
         </div>
       </div>
+
+      {/* Messages Area - Scrollable between header and input */}
       <div className="absolute top-[73px] bottom-[73px] left-0 right-0 overflow-hidden">
-        <ScrollArea className="h-full ">
+        <ScrollArea className="h-full">
           <div className="p-4 space-y-4 md:space-y-6">
             {messages.map((message, index) => {
               const isCurrentUser = message.senderId === currentUser.id;
@@ -222,12 +238,10 @@ export default function ChatInterface({
               const isHovered = hoveredMessageId === message.id;
               return (
                 <div key={`${message.id}-${message.timestamp}`}>
-                  {/* Time Divider */}
                   {timeDivider.show && timeDivider.content && (
                     <TimeDivider content={timeDivider.content} />
                   )}
 
-                  {/* Message */}
                   <div
                     className={cn(
                       "flex w-full",
@@ -244,10 +258,9 @@ export default function ChatInterface({
                       )}
                     >
                       {!isCurrentUser && (
-                        // <div className="h-8 w-8 rounded-full bg-primary flex-shrink-0" />
                         <Avatar className="h-8 w-8 rounded-lg">
                           <AvatarImage
-                            src={chatPartner.imageUrl}
+                            src={chatPartner.imageUrl || "/placeholder.svg"}
                             alt={
                               chatPartner.username
                                 ? chatPartner.username
@@ -255,7 +268,6 @@ export default function ChatInterface({
                             }
                           />
                           <AvatarFallback className="rounded-lg">
-                            {" "}
                             {chatPartner.username.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
@@ -309,7 +321,6 @@ export default function ChatInterface({
                                     <Copy className="h-4 w-4" />
                                   </DropdownMenuItem>
                                   <DropdownMenuItem>
-                                    {" "}
                                     Delete
                                     <Trash className="h-4 w-4 text-red-500" />
                                   </DropdownMenuItem>
@@ -347,8 +358,9 @@ export default function ChatInterface({
           </div>
         </ScrollArea>
       </div>
-      {/* input chat */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 p-4 border-t border-gray-200 bg-white rounded-b-2xl ">
+
+      {/* Input Area - Sticky at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 p-4 border-t border-gray-200 bg-white rounded-b-2xl">
         <div className="flex gap-2 items-center">
           <Textarea
             placeholder="Type a message"

@@ -3,12 +3,12 @@ import { FriendsWithLastMessage, Message } from "@/types/message";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { pusherClient } from "@/lib/pusher";
 import { toast } from "sonner";
-import CustomToast from "./custom-toast";
+import CustomToast from "../custom-toast";
 import { useFriendsOnlineStatus } from "@/hooks/use-friends-online-status";
-import { OnlineStatusUsersSidebar } from "./online-status-users-sidebar";
+import { OnlineStatusUsersSidebar } from "../online-status-users-sidebar";
 
 interface SidebarChatListProps {
   friends: FriendsWithLastMessage[];
@@ -119,7 +119,6 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
       });
     }
   }, [pathName]);
-
 
   // Sort friends: online first, then alphabetically
   const sortedFriends = [...activeChat].sort((a, b) => {

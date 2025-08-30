@@ -29,24 +29,23 @@ import {
   Search,
   ImageIcon,
   FileText,
+  ArrowLeft,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@radix-ui/react-separator";
 interface ProfileChatProps {
-  showProfile: boolean;
   chatId: string;
   chatPartner: UserData;
+  isMobile: boolean;
+  handleCloseProfile?: () => void;
 }
 
 export default function ProfileChat({
-  showProfile,
   chatPartner,
   chatId,
+  isMobile,
+  handleCloseProfile,
 }: ProfileChatProps) {
-  const [mediaExpanded, setMediaExpanded] = useState(true);
-  const [chatInfoExpanded, setChatInfoExpanded] = useState(false);
-  const [customizeExpanded, setCustomizeExpanded] = useState(false);
-  const [privacyExpanded, setPrivacyExpanded] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     chatInfo: false,
     customization: false,
@@ -79,16 +78,39 @@ export default function ProfileChat({
   };
 
   return (
-    <div className="w-80 bg-gray-50 rounded-2xl">
+    <div
+      className={cn(
+        "bg-gray-50 rounded-2xl 2xl:w-96 shadow-lg",
+        isMobile ? "w-full" : "w-80"
+      )}
+    >
       <ScrollArea className="h-full">
         <div className="p-4 space-y-6">
+          {/* Header with Previous Button */}
+          {isMobile && (
+            <div className="flex items-center gap-3 pb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCloseProfile}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back</span>
+              </Button>
+            </div>
+          )}
+
           {/* Profile Section */}
           <div className="text-center">
+            {/* {isMobile} */}
             <Avatar className="w-20 h-20 mx-auto mb-3">
-              <AvatarImage src="/vietnamese-man-profile-sunset.png" />
+              <AvatarImage src={chatPartner.imageUrl} alt="User Avatar" />
               <AvatarFallback>TC</AvatarFallback>
             </Avatar>
-            <h3 className="font-semibold text-gray-900 mb-1">Trần Công Mạnh</h3>
+            <h3 className="font-semibold text-gray-900 mb-1">
+              {chatPartner.username}
+            </h3>
             <p className="text-sm text-gray-600 flex items-center justify-center gap-1">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
               Đang mở hóa đầu cuối
