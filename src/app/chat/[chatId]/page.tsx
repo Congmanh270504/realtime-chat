@@ -6,8 +6,9 @@ import { SignIn } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import React, { Suspense } from "react";
 import Loading from "../../../components/chat/loading";
-import ChatLayout from "../../../components/chat/chat-layout";
 import { Metadata } from "next";
+import { redis } from "@/lib/redis";
+import ChatLayout from "@/components/chat/chat-layout";
 
 interface PageProps {
   params: Promise<{
@@ -37,15 +38,23 @@ export async function generateMetadata({
     };
   }
 
-  const chatPartnerId = userId1 === user.id ? userId2 : userId1;
+  const partnerUserId = userId1 === user.id ? userId2 : userId1;
 
   try {
-    const chatPartnerRaw = await fetchRedis("get", `user:${chatPartnerId}`);
-    const chatPartner = JSON.parse(chatPartnerRaw) as UserData;
+    // Lấy nicknames của user hiện tại
+    const nicknames = (await redis.hgetall(
+      `user:${user.id}:nicknames`
+    )) as Record<string, string>;
+
+    const partnerUserRaw = await fetchRedis("get", `user:${partnerUserId}`);
+    const partnerUser = JSON.parse(partnerUserRaw) as UserData;
+
+    // Sử dụng nickname nếu có, nếu không thì dùng username gốc
+    const displayName = nicknames[partnerUser.id] || partnerUser.username;
 
     return {
-      title: `Chat with ${chatPartner.username} - Thomas`,
-      description: `Chat conversation with ${chatPartner.username}`,
+      title: `Chat with ${displayName} - Thomas`,
+      description: `Chat conversation with ${displayName}`,
     };
   } catch {
     return {
@@ -60,7 +69,7 @@ async function getChatMessages(chatId: string) {
       "zrevrange",
       `chat:${chatId}:messages`,
       0,
-      9
+      19
     )) as string[];
     const dbMessages = result.map((message) => JSON.parse(message) as Message);
 
@@ -84,10 +93,28 @@ const Page = async ({ params }: PageProps) => {
     return <div>You do not have access to this chat.</div>;
   }
 
-  const chatPartnerId = userId1 === user.id ? userId2 : userId1;
-  const chatPartnerRaw = await fetchRedis("get", `user:${chatPartnerId}`);
+  // Lấy nicknames của user hiện tại
+  const nicknames = (await redis.hgetall(`chat:${chatId}:nicknames`)) as Record<
+    string,
+    string
+  >;
 
-  const chatPartner = JSON.parse(chatPartnerRaw) as UserData;
+  // Helper function để lấy display name
+  const getDisplayName = (userId: string, originalUsername: string) => {
+    return nicknames[userId] || originalUsername;
+  };
+
+  const partnerUserId = userId1 === user.id ? userId2 : userId1;
+  const partnerUserRaw = await fetchRedis("get", `user:${partnerUserId}`);
+
+  const partnerUserData = JSON.parse(partnerUserRaw) as UserData;
+
+  // Tạo partnerUser với nickname nếu có
+  const partnerUser: UserData = {
+    ...partnerUserData,
+    username: getDisplayName(partnerUserData.id, partnerUserData.username),
+  };
+
   const initialMessages = (await getChatMessages(chatId)) as Message[];
 
   const transferCurrentUser: UserData = {
@@ -96,14 +123,14 @@ const Page = async ({ params }: PageProps) => {
     firstName: user.firstName || "",
     lastName: user.lastName || "",
     imageUrl: user.imageUrl || "",
-    username: user.username || "",
+    username: getDisplayName(user.id, user.username || ""),
     createdAt: "",
   };
 
   return (
     <Suspense fallback={<Loading />}>
       <ChatLayout
-        chatPartner={chatPartner}
+        partnerUser={partnerUser}
         initialMessages={initialMessages}
         transferCurrentUser={transferCurrentUser}
         chatId={chatId}

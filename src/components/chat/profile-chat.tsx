@@ -2,12 +2,6 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 // import {
 //   User,
 //   Bell,
@@ -30,21 +24,27 @@ import {
   ImageIcon,
   FileText,
   ArrowLeft,
+  Pencil,
+  Palette,
+  Captions,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@radix-ui/react-separator";
+import { SetTitlePartnerNameDialog } from "./set-title-partner-name-dialog";
 interface ProfileChatProps {
   chatId: string;
-  chatPartner: UserData;
+  partnerUser: UserData;
   isMobile: boolean;
   handleCloseProfile?: () => void;
+  currentUser: UserData;
 }
 
 export default function ProfileChat({
-  chatPartner,
+  partnerUser,
   chatId,
   isMobile,
   handleCloseProfile,
+  currentUser,
 }: ProfileChatProps) {
   const [expandedSections, setExpandedSections] = useState({
     chatInfo: false,
@@ -105,12 +105,14 @@ export default function ProfileChat({
           <div className="text-center">
             {/* {isMobile} */}
             <Avatar className="w-20 h-20 mx-auto mb-3">
-              <AvatarImage src={chatPartner.imageUrl} alt="User Avatar" />
+              <AvatarImage src={partnerUser.imageUrl} alt="User Avatar" />
               <AvatarFallback>TC</AvatarFallback>
             </Avatar>
-            <h3 className="font-semibold text-gray-900 mb-1">
-              {chatPartner.username}
-            </h3>
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <h3 className="font-semibold text-gray-900 mb-1">
+                {partnerUser.username}
+              </h3>
+            </div>
             <p className="text-sm text-gray-600 flex items-center justify-center gap-1">
               <span className="w-2 h-2 bg-green-500 rounded-full"></span>
               Đang mở hóa đầu cuối
@@ -171,13 +173,20 @@ export default function ProfileChat({
               )}
             </Button>
 
-            {expandedSections.customization && (
-              <div className="pl-3 space-y-2">
-                <div className="text-sm text-gray-600">
-                  Customization options...
-                </div>
-              </div>
-            )}
+            <div className="pl-3 space-y-2 ">
+              <SetTitlePartnerNameDialog
+                partnerUser={partnerUser}
+                chatId={chatId}
+                currentUser={currentUser}
+              />
+            </div>
+
+            <div className="pl-3 space-y-2 ">
+              <Button variant="ghost" className="w-full justify-start ">
+                <Palette />
+                Themes
+              </Button>
+            </div>
           </div>
 
           <Separator />

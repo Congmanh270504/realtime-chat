@@ -21,7 +21,6 @@ export async function DELETE(req: Request) {
     // delete one side not both side 
 
 
-    console.log(chatId, "isFriend", isFriend);
     return NextResponse.json({
       message: "Chat deleted successfully",
       status: 200,

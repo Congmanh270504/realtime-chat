@@ -18,6 +18,7 @@ import {
   Send,
   EllipsisVertical,
   Trash,
+  Loader2,
 } from "lucide-react";
 import { cn, toPusherKey } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -35,12 +36,14 @@ import Emoji from "../emoji";
 import { toast } from "sonner";
 import { OnlineStatusIndicator } from "../online-status-partner";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { useLoadMoreMessages } from "@/hooks/use-load-more-messages";
+import { useScrollToLoad } from "@/hooks/use-scroll-to-load";
 
 interface ChatInterfaceProps {
   initialMessages: Message[];
   currentUser: UserData;
   chatId: string; // Optional chatId if needed for the API call
-  chatPartner: UserData;
+  partnerUser: UserData;
   handleCloseProfile?: () => void;
 }
 
@@ -48,20 +51,40 @@ export default function ChatInterface({
   initialMessages,
   currentUser,
   chatId,
-  chatPartner,
+  partnerUser,
   handleCloseProfile,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
+  // Sử dụng hook để load thêm tin nhắn
+  const {
+    messages,
+    isLoading: isLoadingMore,
+    hasMore,
+    loadMore,
+    setMessages,
+  } = useLoadMoreMessages({
+    chatId,
+    initialMessages,
+    messagesPerPage: 20,
+  });
+
+  // Sử dụng hook để detect scroll và load thêm tin nhắn
+  const { scrollAreaRef } = useScrollToLoad({
+    onLoadMore: loadMore,
+    hasMore,
+    isLoading: isLoadingMore,
+    threshold: 100,
+  });
+
   // Hook quản lý title
   const { changeTitle } = useDocumentTitle({
-    newMessageTitle: `💬 New message from ${chatPartner.username}`,
-    originalTitle: `Chat with ${chatPartner.username} - Thomas`,
+    newMessageTitle: `💬 New message from ${partnerUser.username}`,
+    originalTitle: `Chat with ${partnerUser.username} - Thomas`,
     resetDelay: 10000,
   });
 
@@ -109,7 +132,7 @@ export default function ChatInterface({
       pusherClient.unsubscribe(chatChannel);
       pusherClient.unbind("incoming_message", messageHandler);
     };
-  }, [chatId, currentUser.id, chatPartner.username, changeTitle]);
+  }, [chatId, currentUser.id, partnerUser.username, changeTitle, setMessages]);
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
@@ -174,23 +197,22 @@ export default function ChatInterface({
           <Avatar className="h-8 w-8 rounded-lg">
             <AvatarImage
               src={
-                chatPartner.imageUrl ||
+                partnerUser.imageUrl ||
                 "/placeholder.svg?height=32&width=32&query=user avatar" ||
                 "/placeholder.svg"
               }
               alt={"User image"}
             />
             <AvatarFallback className="rounded-lg">
-              {chatPartner.username.slice(0, 2).toUpperCase()}
+              {partnerUser.username.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-
           <div>
             <h2 className="font-semibold text-gray-900">
-              {chatPartner.username}
+              {partnerUser.username}
             </h2>
             <OnlineStatusIndicator
-              partnerId={chatPartner.id}
+              partnerId={partnerUser.id}
               currentUserId={currentUser.id}
               showText={true}
               size="sm"
@@ -225,8 +247,18 @@ export default function ChatInterface({
 
       {/* Messages Area - Scrollable between header and input */}
       <div className="absolute top-[73px] bottom-[73px] left-0 right-0 overflow-hidden">
-        <ScrollArea className="h-full">
+        <ScrollArea className="h-full" ref={scrollAreaRef}>
           <div className="p-4 space-y-4 md:space-y-6">
+            {/* Loading indicator cho load more messages */}
+            {isLoadingMore && (
+              <div className="flex justify-center py-2">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading messages...
+                </div>
+              </div>
+            )}
+
             {messages.map((message, index) => {
               const isCurrentUser = message.senderId === currentUser.id;
               const previousMessage =
@@ -260,15 +292,15 @@ export default function ChatInterface({
                       {!isCurrentUser && (
                         <Avatar className="h-8 w-8 rounded-lg">
                           <AvatarImage
-                            src={chatPartner.imageUrl || "/placeholder.svg"}
+                            src={partnerUser.imageUrl || "/placeholder.svg"}
                             alt={
-                              chatPartner.username
-                                ? chatPartner.username
+                              partnerUser.username
+                                ? partnerUser.username
                                 : "User image"
                             }
                           />
                           <AvatarFallback className="rounded-lg">
-                            {chatPartner.username.slice(0, 2).toUpperCase()}
+                            {partnerUser.username.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                       )}
@@ -286,7 +318,7 @@ export default function ChatInterface({
                             )}
                           >
                             <span className="text-sm font-medium">
-                              {isCurrentUser ? null : chatPartner.username}
+                              {isCurrentUser ? null : partnerUser.username}
                             </span>
                             <span className="text-sm text-muted-foreground">
                               {formatTimestamp(message.timestamp)}
