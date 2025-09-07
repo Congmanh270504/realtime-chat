@@ -9,6 +9,10 @@ import { fetchRedis } from "@/lib/hepper/redis";
 import { getFriendsByUserId } from "@/lib/hepper/get-friends";
 import { Message } from "@/types/message";
 import GlobalNotificationProvider from "@/components/global-notification-provider";
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { extractRouterConfig } from "uploadthing/server";
+import { ourFileRouter } from "@/app/api/uploadthing/core";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -87,6 +91,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
         </ThemeProvider> */}
+          <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
           <ClientProvider
             unseenRequestCount={unseenRequests.length}
             initialFriends={friendsWithLastMessage}

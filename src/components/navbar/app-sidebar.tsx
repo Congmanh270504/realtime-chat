@@ -1,6 +1,14 @@
 "use client";
 
-import { ArchiveX, Command, File, Inbox, Send, Trash2 } from "lucide-react";
+import {
+  ArchiveX,
+  CirclePlus,
+  Command,
+  File,
+  Inbox,
+  Send,
+  Trash2,
+} from "lucide-react";
 import { MdPeopleAlt, MdPersonAddAlt1 } from "react-icons/md";
 
 import { Label } from "@/components/ui/label";
@@ -23,6 +31,7 @@ import { NavUser } from "./nav-user";
 import { useState } from "react";
 import { FriendsWithLastMessage } from "@/types/message";
 import { useRouter } from "next/navigation";
+import { CreateServerDialog } from "../server/create-server-dialog";
 
 export function AppSidebar({
   unseenRequestCount = 0,
@@ -167,6 +176,24 @@ export function AppSidebar({
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => {
+                      // setActiveItem(null);
+                      setOpen(true);
+                    }}
+                    className="px-2.5 md:px-2"
+                    tooltip={{
+                      children: "Create Server",
+                      hidden: false,
+                    }}
+                  >
+                    {/* <PlusCircle className="mr-2" /> */}
+                    <CreateServerDialog />
+                    <span>Create Server</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
