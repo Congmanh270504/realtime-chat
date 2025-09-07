@@ -84,7 +84,7 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
           initialFriends={initialFriends}
           userId={userId}
         />
-        <SidebarInset>
+        <SidebarInset className="flex flex-col h-screen">
           <header className="bg-background top-0 flex shrink-0 items-center gap-2 border-b p-4">
             <SidebarTrigger className="-ml-1" />
             <Separator
@@ -103,7 +103,7 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
               </BreadcrumbList>
             </Breadcrumb>
           </header>
-          <div className="h-full w-full">{children}</div>
+          <div className="flex-1 overflow-hidden">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </QueryClientProvider>

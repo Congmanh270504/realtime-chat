@@ -56,7 +56,7 @@ const ChatLayout = ({
   }, [transferCurrentUser.id, chatId, partnerUser.id]);
 
   return (
-    <div className="flex h-full bg-gray-100 overflow-hidden p-4 gap-4">
+    <div className="flex h-full bg-gray-100 overflow-hidden p-4 gap-4 min-h-0">
       {isMobile ? (
         !showProfile ? (
           <ProfileChat

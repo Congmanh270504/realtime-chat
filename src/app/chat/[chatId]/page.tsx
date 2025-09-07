@@ -42,15 +42,15 @@ export async function generateMetadata({
 
   try {
     // Lấy nicknames của user hiện tại
-    const nicknames = (await redis.hgetall(
-      `user:${user.id}:nicknames`
+    const nicknamesData = (await redis.hgetall(
+      `chat:${chatId}:nicknames`
     )) as Record<string, string>;
 
     const partnerUserRaw = await fetchRedis("get", `user:${partnerUserId}`);
     const partnerUser = JSON.parse(partnerUserRaw) as UserData;
 
     // Sử dụng nickname nếu có, nếu không thì dùng username gốc
-    const displayName = nicknames[partnerUser.id] || partnerUser.username;
+    const displayName = nicknamesData[partnerUser.id] || partnerUser.username;
 
     return {
       title: `Chat with ${displayName} - Thomas`,

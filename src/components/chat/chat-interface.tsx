@@ -59,6 +59,10 @@ export default function ChatInterface({
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const [isSettingChanged, setIsSettingChanged] = useState({
+    nickname: false,
+    themes: false,
+  });
 
   // Sử dụng hook để load thêm tin nhắn
   const {
@@ -192,7 +196,7 @@ export default function ChatInterface({
   return (
     <div className="flex-1 flex flex-col bg-white rounded-2xl relative h-full overflow-hidden shadow-lg">
       {/* Chat Header - Sticky at top */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-green-100 px-6 py-4 border-b flex items-center justify-between rounded-t-2xl flex-shrink-0">
+      <div className="sticky top-0 left-0 right-0 z-10 bg-green-100 px-6 py-4 border-b flex items-center justify-between rounded-t-2xl flex-shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8 rounded-lg">
             <AvatarImage

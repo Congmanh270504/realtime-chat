@@ -14,14 +14,16 @@ interface UseNicknamesReturn {
   refreshNicknames: () => Promise<void>;
 }
 
-export const useNicknames = (): UseNicknamesReturn => {
+export const useNicknames = (chatId: string): UseNicknamesReturn => {
   const [nicknames, setNicknames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   const fetchNicknames = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/chats/setting/nickname");
+      const response = await fetch(
+        `/api/chats/setting/nickname/?chatId=${chatId}`
+      );
       if (response.ok) {
         const data = await response.json();
         setNicknames(data.nicknames || {});
@@ -31,7 +33,7 @@ export const useNicknames = (): UseNicknamesReturn => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [chatId]);
 
   const setNickname = useCallback(
     async (

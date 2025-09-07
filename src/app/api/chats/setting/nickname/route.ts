@@ -33,12 +33,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Set nickname for the specific user
-    // Key format: user:{currentUserId}:nicknames
+    // Key format: chat:{chatId}:nicknames
     // Field: userId, Value: nickname
-    await redis.hset(`user:${user.id}:nicknames`, {
+    await redis.hset(`chat:${chatId}:nicknames`, {
       [userId]: nickname.trim(),
     });
-
 
     // Trigger real-time update cho cả 2 users trong chat
     const channelKey = toPusherKey(`chat:${chatId}:nicknames:${user.id}`);
@@ -77,16 +76,32 @@ export async function POST(req: NextRequest) {
 }
 
 // GET endpoint để lấy tất cả nicknames của user
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const user = await currentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const { searchParams } = new URL(req.url);
+    const chatId = searchParams.get("chatId");
+    if (!chatId) {
+      return NextResponse.json(
+        { error: "chatId is required" },
+        { status: 400 }
+      );
+    }
+
+    const [userId1, userId2] = chatId.split("--");
+    if (userId1 !== user.id && userId2 !== user.id) {
+      return NextResponse.json(
+        { error: "Access denied to this chat" },
+        { status: 403 }
+      );
+    }
 
     // Lấy tất cả nicknames của user hiện tại
     const nicknames = (await redis.hgetall(
-      `user:${user.id}:nicknames`
+      `chat:${chatId}:nicknames`
     )) as Record<string, string>;
 
     return NextResponse.json({

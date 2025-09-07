@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       user: {
-        id: userId,
+        id: userId,  
         email: userDetails.email || "",
         name: userDetails.name || "",
         image: userDetails.image || "",

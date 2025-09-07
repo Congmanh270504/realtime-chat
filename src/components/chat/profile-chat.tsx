@@ -80,12 +80,12 @@ export default function ProfileChat({
   return (
     <div
       className={cn(
-        "bg-gray-50 rounded-2xl 2xl:w-96 shadow-lg",
+        "bg-gray-50 rounded-2xl 2xl:w-96 shadow-lg overflow-hidden h-full flex flex-col",
         isMobile ? "w-full" : "w-80"
       )}
     >
-      <ScrollArea className="h-full">
-        <div className="p-4 space-y-6">
+      <ScrollArea className="flex-1 min-h-0 max-h-full">
+        <div className="p-4 space-y-6 pb-16 min-h-full">
           {/* Header with Previous Button */}
           {isMobile && (
             <div className="flex items-center gap-3 pb-2">
@@ -250,9 +250,25 @@ export default function ProfileChat({
 
             {expandedSections.privacy && (
               <div className="pl-3 space-y-2">
-                <div className="text-sm text-gray-600">
-                  Privacy and support options...
-                </div>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-sm text-gray-600 h-auto p-2"
+                >
+                  Chặn người dùng
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-sm text-gray-600 h-auto p-2"
+                >
+                  Báo cáo
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-sm text-red-600 h-auto p-2"
+                  onClick={handleDeleteChat}
+                >
+                  Xóa cuộc trò chuyện
+                </Button>
               </div>
             )}
           </div>

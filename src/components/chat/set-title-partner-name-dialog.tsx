@@ -54,7 +54,7 @@ export function SetTitlePartnerNameDialog({
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { setNickname: saveNickname, getNickname } = useNicknames();
+  const { setNickname: saveNickname, getNickname } = useNicknames(chatId);
 
   // React Hook Form setup
   const form = useForm<NicknameFormData>({
@@ -67,9 +67,7 @@ export function SetTitlePartnerNameDialog({
   const handleUserSelect = (userData: UserData) => {
     setSelectedUser(userData);
     setShowForm(true);
-    // Load existing nickname if any
-    const existingNickname = getNickname(userData.id);
-    form.setValue("nickname", existingNickname || "");
+    form.setValue("nickname", userData.username);
   };
 
   const handleBackToList = () => {
@@ -180,6 +178,7 @@ export function SetTitlePartnerNameDialog({
                           {...field}
                           className="w-full"
                           disabled={isLoading}
+                          value={field.value || ""}
                         />
                       </FormControl>
                       <FormDescription className="flex justify-between items-center">
@@ -226,38 +225,38 @@ export function SetTitlePartnerNameDialog({
                 className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
                 onClick={() => handleUserSelect(partnerUser)}
               >
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage
-                      src={partnerUser.imageUrl || "/placeholder.svg"}
-                      alt={partnerUser.username}
-                    />
-                    <AvatarFallback>
-                      {partnerUser.username
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
+                <div className="flex items-center gap-3 justify-between w-full">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage
+                        src={partnerUser.imageUrl || "/placeholder.svg"}
+                        alt={partnerUser.username}
+                      />
+                      <AvatarFallback>
+                        {partnerUser.username
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-foreground">
-                        {getNickname(partnerUser.id) || partnerUser.username}
-                      </h3>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                        Chat Partner
-                      </span>
-                      {getNickname(partnerUser.id) && (
-                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                          Custom Nickname
-                        </span>
-                      )}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 w-full">
+                        <h3 className="font-medium text-foreground">
+                          {getNickname(partnerUser.id) || partnerUser.username}
+                        </h3>
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-center">
+                      Chat Partner
+                    </span>
                     {getNickname(partnerUser.id) && (
-                      <p className="text-xs text-muted-foreground">
-                        Original: {partnerUser.username}
-                      </p>
+                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-center">
+                        Custom Nickname
+                      </span>
                     )}
                   </div>
                 </div>
@@ -267,29 +266,34 @@ export function SetTitlePartnerNameDialog({
                 className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
                 onClick={() => handleUserSelect(currentUser)}
               >
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage
-                      src={currentUser.imageUrl || "/placeholder.svg"}
-                      alt={currentUser.username || "User"}
-                    />
-                    <AvatarFallback>
-                      {(currentUser.firstName ?? "User")
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
+                <div className="flex items-center gap-3 justify-between w-full">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage
+                        src={currentUser.imageUrl || "/placeholder.svg"}
+                        alt={currentUser.username || "User"}
+                      />
+                      <AvatarFallback>
+                        {(currentUser.firstName ?? "User")
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-foreground">
-                        {currentUser.username}
-                      </h3>
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                        You
-                      </span>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 w-full">
+                        <h3 className="font-medium text-foreground">
+                          {currentUser.username}
+                        </h3>
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-center">
+                      You
+                    </span>
                   </div>
                 </div>
               </div>
