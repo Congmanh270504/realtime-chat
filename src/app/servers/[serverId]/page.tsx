@@ -1,7 +1,11 @@
 import { fetchRedis } from "@/lib/hepper/redis";
-import Image from "next/image";
-import React from "react";
+import React, { Suspense } from "react";
 import { Metadata } from "next";
+import { Servers } from "@/types/servers";
+import Loading from "@/components/chat/loading";
+import GroupChatInterface from "./group-chat-interface";
+import { GroupMessage } from "@/types/group-message";
+import { groupMessageArrayValidator } from "@/lib/validation/group-message";
 
 interface PageProps {
   params: Promise<{
@@ -37,47 +41,52 @@ export async function generateMetadata({
     };
   }
 }
+async function getChatMessages(serverId: string) {
+  try {
+    const result = (await fetchRedis(
+      "zrevrange",
+      `servers:${serverId}:messages`,
+      0,
+      19
+    )) as string[];
+    const dbMessages = result.map(
+      (message) => JSON.parse(message) as GroupMessage
+    );
 
+    const messages = groupMessageArrayValidator.parse(dbMessages);
+    return messages.reverse();
+  } catch {
+    return [];
+  }
+}
 const Page = async ({ params }: PageProps) => {
   const { serverId } = await params;
 
-  try {
-    // Fetch server details using serverId if needed
-    const data = await fetchRedis("get", `servers:${serverId}`);
+  const data = await fetchRedis("get", `servers:${serverId}`);
 
-    if (!data) {
-      return (
-        <div>
-          <h1>Server Not Found</h1>
-          <p>The server with ID {serverId} does not exist.</p>
-        </div>
-      );
-    }
-
-    const serverData = JSON.parse(data);
-
-    return (
-      <div className="p-8">
-        <h1>Server: {serverData.serverName}</h1>
-        <p>Server ID: {serverId}</p>
-        <Image
-          src={serverData.serverImage}
-          alt={serverData.serverName}
-          width={100}
-          height={100}
-          className="rounded-lg"
-        />
-        <pre>{JSON.stringify(serverData, null, 2)}</pre>
-      </div>
-    );
-  } catch (error) {
+  if (!data) {
     return (
       <div>
-        <h1>Error</h1>
-        <p>Failed to load server data for {serverId}</p>
+        <h1>Server Not Found</h1>
+        <p>The server with ID {serverId} does not exist.</p>
       </div>
     );
   }
+
+  const serverData = JSON.parse(data) as Servers;
+  const initialMessages = (await getChatMessages(serverId)) as GroupMessage[];
+
+  return (
+    <Suspense fallback={<Loading />}>
+      <div className="flex h-full bg-gray-100 overflow-hidden p-4 gap-4 min-h-0">
+        <GroupChatInterface
+          servers={serverData}
+          initialMessages={initialMessages}
+          serverId={serverId}
+        />
+      </div>
+    </Suspense>
+  );
 };
 
 export default Page;

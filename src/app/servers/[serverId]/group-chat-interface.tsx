@@ -21,127 +21,53 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn, toPusherKey } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Message } from "@/types/message";
 import { UserData } from "@/types/user";
 import {
   formatTimestamp,
   shouldShowTimeDivider,
 } from "@/lib/hepper/format-time";
-import { TimeDivider } from "../time-divider";
+// import { TimeDivider } from "../time-divider";
 import { pusherClient } from "@/lib/pusher";
 import { useIsMobile } from "@/hooks/use-mobile";
-import ChatReactIcons from "../chat-react-icons";
-import Emoji from "../emoji";
+// import ChatReactIcons from "../chat-react-icons";
 import { toast } from "sonner";
-import { OnlineStatusIndicator } from "../online-status-partner";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useLoadMoreMessages } from "@/hooks/use-load-more-messages";
 import { useScrollToLoad } from "@/hooks/use-scroll-to-load";
+import Emoji from "@/components/emoji";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Servers } from "@/types/servers";
+import ChatReactIcons from "@/components/chat-react-icons";
+import { TimeDivider } from "@/components/time-divider";
+import { useUser } from "@clerk/nextjs";
+import { GroupMessage } from "@/types/group-message";
 
-interface ChatInterfaceProps {
-  initialMessages: Message[];
-  currentUser: UserData;
-  chatId: string; // Optional chatId if needed for the API call
-  partnerUser: UserData;
-  handleCloseProfile?: () => void;
+interface GroupChatInterfaceProps {
+  servers: Servers;
+  initialMessages: GroupMessage[];
+  serverId: string;
 }
-
-export default function ChatInterface({
+const GroupChatInterface = ({
+  servers,
   initialMessages,
-  currentUser,
-  chatId,
-  partnerUser,
-  handleCloseProfile,
-}: ChatInterfaceProps) {
+  serverId,
+}: GroupChatInterfaceProps) => {
   const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<GroupMessage[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
-  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const [isSettingChanged, setIsSettingChanged] = useState({
-    nickname: false,
-    themes: false,
-  });
-
-  // Sử dụng hook để load thêm tin nhắn
-  const {
-    messages,
-    isLoading: isLoadingMore,
-    hasMore,
-    loadMore,
-    setMessages,
-  } = useLoadMoreMessages({
-    chatId,
-    initialMessages,
-    messagesPerPage: 20,
-  });
-
-  // Sử dụng hook để detect scroll và load thêm tin nhắn
-  const { scrollAreaRef } = useScrollToLoad({
-    onLoadMore: loadMore,
-    hasMore,
-    isLoading: isLoadingMore,
-    threshold: 100,
-  });
-
-  // Hook quản lý title
-  const { changeTitle } = useDocumentTitle({
-    newMessageTitle: `💬 New message from ${partnerUser.username}`,
-    originalTitle: `Chat with ${partnerUser.username} - Thomas`,
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const { user } = useUser();
+  useDocumentTitle({
+    newMessageTitle: `💬 New message in ${servers.serverName}`,
+    originalTitle: `Chat - ${servers.serverName}`,
     resetDelay: 10000,
   });
 
-  useEffect(() => {
-    // Đảm bảo kết nối tới Pusher
-    const chatChannel = toPusherKey(`chat:${chatId}`);
-
-    pusherClient.subscribe(chatChannel);
-
-    const messageHandler = (data: Message) => {
-      // Kiểm tra nếu tin nhắn không phải từ người dùng hiện tại
-      if (data.senderId !== currentUser.id) {
-        // Thay đổi title khi có tin nhắn mới từ người khác
-        changeTitle();
-      }
-
-      setMessages((prev) => {
-        // Tìm và thay thế optimistic message nếu có
-        const optimisticIndex = prev.findIndex(
-          (msg) =>
-            msg.senderId === data.senderId &&
-            msg.text === data.text &&
-            msg.id.startsWith("temp-") &&
-            Math.abs(msg.timestamp - data.timestamp) < 5000 // trong vòng 5 giây
-        );
-
-        if (optimisticIndex !== -1) {
-          // Thay thế optimistic message bằng message thật
-          const newMessages = [...prev];
-          newMessages[optimisticIndex] = data;
-          return newMessages;
-        }
-
-        // Kiểm tra xem message đã tồn tại chưa để tránh duplicate
-        const exists = prev.some((msg) => msg.id === data.id);
-        if (exists) return prev;
-
-        return [...prev, data];
-      });
-    };
-
-    pusherClient.bind("incoming_message", messageHandler);
-
-    return () => {
-      pusherClient.unsubscribe(chatChannel);
-      pusherClient.unbind("incoming_message", messageHandler);
-    };
-  }, [chatId, currentUser.id, partnerUser.username, changeTitle, setMessages]);
-
-  // Auto scroll to bottom when new messages arrive
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const handleEmojiSelect = (emoji: string) => {
+    setInput((prev) => prev + emoji);
+  };
 
   const handleAddMessage = async () => {
     if (!input.trim()) return;
@@ -150,16 +76,23 @@ export default function ChatInterface({
     const tempId = `temp-${Date.now()}`;
 
     // Optimistic update - thêm message ngay lập tức
-    const friendId =
-      currentUser.id === chatId.split("--")[0]
-        ? chatId.split("--")[1]
-        : chatId.split("--")[0];
-    const optimisticMessage: Message = {
+    // const friendId =
+    //   user?.id === chatId.split("--")[0]
+    //     ? chatId.split("--")[1]
+    //     : chatId.split("--")[0];
+    const optimisticMessage: GroupMessage = {
       id: tempId,
-      senderId: currentUser.id,
-      receiverId: friendId,
       text: messageText,
       timestamp: Date.now(),
+      sender: {
+        id: user?.id || "",
+        username: user?.username || "Unknown",
+        imageUrl: user?.imageUrl || "",
+        email: user?.emailAddresses[0]?.emailAddress || "",
+        firstName: user?.firstName || "",
+        lastName: user?.lastName || "",
+        createdAt: "",
+      },
     };
 
     setMessages((prev) => [...prev, optimisticMessage]);
@@ -167,12 +100,12 @@ export default function ChatInterface({
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/messages/send", {
+      const response = await fetch("/api/messages/server/send", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ text: messageText, chatId }),
+        body: JSON.stringify({ text: messageText, serverId }),
       });
       const data = await response.json();
 
@@ -189,38 +122,31 @@ export default function ChatInterface({
     }
   };
 
-  const handleEmojiSelect = (emoji: string) => {
-    setInput((prev) => prev + emoji);
-  };
-
   return (
     <div className="flex-1 flex flex-col bg-white rounded-2xl relative h-full overflow-hidden shadow-lg">
-      {/* Chat Header - Sticky at top */}
       <div className="sticky top-0 left-0 right-0 z-10 bg-green-100 px-6 py-4 border-b flex items-center justify-between rounded-t-2xl flex-shrink-0">
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8 rounded-lg">
             <AvatarImage
               src={
-                partnerUser.imageUrl ||
+                servers.serverImage ||
                 "/placeholder.svg?height=32&width=32&query=user avatar" ||
                 "/placeholder.svg"
               }
               alt={"User image"}
             />
             <AvatarFallback className="rounded-lg">
-              {partnerUser.username.slice(0, 2).toUpperCase()}
+              {servers.serverName.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div>
             <h2 className="font-semibold text-gray-900">
-              {partnerUser.username}
+              {servers.serverName}
             </h2>
-            <OnlineStatusIndicator
-              partnerId={partnerUser.id}
-              currentUserId={currentUser.id}
-              showText={true}
-              size="sm"
-            />
+            <div className="flex items-center gap-1">
+              <div className="rounded-full w-2.5 h-2.5 border bg-green-500 border-white" />
+              <span className="text-xs text-gray-600">Online</span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -242,7 +168,7 @@ export default function ChatInterface({
             variant="ghost"
             size="icon"
             className="h-10 w-10 text-green-600 hover:bg-green-200"
-            onClick={handleCloseProfile}
+            // onClick={handleCloseProfile}
           >
             <Info className="h-5 w-5" />
           </Button>
@@ -251,25 +177,17 @@ export default function ChatInterface({
 
       {/* Messages Area - Scrollable between header and input */}
       <div className="absolute top-[73px] bottom-[73px] left-0 right-0 overflow-hidden">
-        <ScrollArea className="h-full" ref={scrollAreaRef}>
+        <ScrollArea className="h-full">
           <div className="p-4 space-y-4 md:space-y-6">
             {/* Loading indicator cho load more messages */}
-            {isLoadingMore && (
-              <div className="flex justify-center py-2">
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading messages...
-                </div>
-              </div>
-            )}
-            {messages.length === 0 && !isLoadingMore && (
+            {messages.length === 0 && (
               <div className="text-center text-gray-500 mt-10">
                 No messages yet. Say hi! 👋
               </div>
             )}
 
             {messages.map((message, index) => {
-              const isCurrentUser = message.senderId === currentUser.id;
+              const isCurrentUser = message.sender.id === user?.id;
               const previousMessage =
                 index > 0 ? messages[index - 1] : undefined;
               const timeDivider = shouldShowTimeDivider(
@@ -301,15 +219,15 @@ export default function ChatInterface({
                       {!isCurrentUser && (
                         <Avatar className="h-8 w-8 rounded-lg">
                           <AvatarImage
-                            src={partnerUser.imageUrl || "/placeholder.svg"}
+                            src={message.sender.imageUrl || "/placeholder.svg"}
                             alt={
-                              partnerUser.username
-                                ? partnerUser.username
+                              message.sender.username
+                                ? message.sender.username
                                 : "User image"
                             }
                           />
                           <AvatarFallback className="rounded-lg">
-                            {partnerUser.username.slice(0, 2).toUpperCase()}
+                            {message.sender.username.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                       )}
@@ -327,7 +245,7 @@ export default function ChatInterface({
                             )}
                           >
                             <span className="text-sm font-medium">
-                              {isCurrentUser ? null : partnerUser.username}
+                              {isCurrentUser ? null : message.sender.username}
                             </span>
                             <span className="text-sm text-muted-foreground">
                               {formatTimestamp(message.timestamp)}
@@ -395,7 +313,6 @@ export default function ChatInterface({
                 </div>
               );
             })}
-            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
       </div>
@@ -429,4 +346,6 @@ export default function ChatInterface({
       </div>
     </div>
   );
-}
+};
+
+export default GroupChatInterface;

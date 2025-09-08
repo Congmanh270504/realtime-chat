@@ -1,4 +1,6 @@
+import { pusherServer } from "@/lib/pusher";
 import { redis } from "@/lib/redis";
+import { toPusherKey } from "@/lib/utils";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
@@ -25,6 +27,7 @@ export async function POST(request: Request) {
     const serverId = uuidv4();
 
     const serverData = {
+      id: serverId,
       serverName: serverName,
       serverImage: imageUrl,
       ownerId: userId,
@@ -32,7 +35,17 @@ export async function POST(request: Request) {
       updatedAt: time.toString(),
     };
 
-    await redis.set(`servers:${serverId}`, JSON.stringify(serverData));
+    // Save server and associate with user
+    await Promise.all([
+      await redis.set(`servers:${serverId}`, JSON.stringify(serverData)),
+      await redis.sadd(`user:${userId}:servers`, serverId),
+      // trigger pusher event to update user's server list in real-time
+      pusherServer.trigger(
+        toPusherKey(`user:${userId}:servers`),
+        "new-server",
+        { server: serverData }
+      ),
+    ]);
 
     return NextResponse.json(
       { url: `/servers/${serverId}`, messages: "Server created" },

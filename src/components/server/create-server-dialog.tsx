@@ -108,7 +108,6 @@ export const CreateServerDialog = () => {
 
   const onInviteSubmit = async (values: z.infer<typeof inviteFormSchema>) => {
     try {
-      // TODO: Implement invite logic here
       const response = await fetch("/api/servers/join", {
         method: "POST",
         headers: {

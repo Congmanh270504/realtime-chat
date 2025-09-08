@@ -1,4 +1,7 @@
+import { pusherServer } from "@/lib/pusher";
 import { redis } from "@/lib/redis";
+import { toPusherKey } from "@/lib/utils";
+import { Servers } from "@/types/servers";
 import { UserData } from "@/types/user";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
@@ -20,8 +23,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const serverExists = await redis.exists(`servers:${inviteLink}`);
-    if (!serverExists) {
+    const serverData = (await redis.get(`servers:${inviteLink}`)) as Servers;
+
+    if (!serverData) {
       return NextResponse.json(
         {
           messages: "Server not found",
@@ -30,7 +34,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const isMember = await redis.sismember(`user:${userId}:servers`, inviteLink);
+    const isMember = await redis.sismember(
+      `user:${userId}:servers`,
+      inviteLink
+    );
     if (isMember) {
       return NextResponse.json(
         { messages: "Already a member of the server" },
@@ -52,6 +59,11 @@ export async function POST(request: Request) {
     await Promise.all([
       redis.sadd(`servers:${inviteLink}:members`, userData),
       redis.sadd(`user:${userId}:servers`, inviteLink),
+      pusherServer.trigger(
+        toPusherKey(`user:${userId}:servers`),
+        "new-server",
+        { server: serverData }
+      ),
     ]);
 
     return NextResponse.json(

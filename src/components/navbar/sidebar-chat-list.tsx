@@ -48,6 +48,19 @@ const SidebarChatList = ({
   }, [friendsStatusData]);
 
   useEffect(() => {
+    pusherClient.subscribe(toPusherKey(`user:${userId}:servers`));
+
+    const newServerHandler = (data: { server: Servers }) => {
+      setAllServers((prev) => [...prev, data.server]);
+    };
+    pusherClient.bind("new-server", newServerHandler);
+    return () => {
+      pusherClient.unbind("new-server", newServerHandler);
+      pusherClient.unsubscribe(toPusherKey(`user:${userId}:servers`));
+    };
+  }, [userId]);
+
+  useEffect(() => {
     pusherClient.subscribe(toPusherKey(`user:${userId}:friend_online_list`));
 
     const handleFriendOnlineList = (data: {
