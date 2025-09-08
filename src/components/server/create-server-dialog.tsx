@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,7 +27,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FileUpload } from "./file-upload";
 import { toast } from "sonner";
-import { ChevronRight, CirclePlus } from "lucide-react";
+import {
+  ChevronRight,
+  CirclePlus,
+  Link,
+  Server,
+  ArrowLeft,
+} from "lucide-react";
 
 const formSchema = z.object({
   serverName: z.string().min(1, { message: "Server name is required" }),
@@ -35,13 +41,22 @@ const formSchema = z.object({
 });
 
 const inviteFormSchema = z.object({
-  inviteLink: z.string().min(1, { message: "Invite link is required" }),
+  inviteLink: z
+    .string()
+    .min(1, { message: "Invite link is required" })
+    .max(255, { message: "Invite link is too long" })
+    .regex(/^[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]+$/, {
+      message:
+        "Invite link contains invalid characters. Only ASCII characters are allowed.",
+    }),
 });
 
 export const CreateServerDialog = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [formType, setFormType] = useState<"create" | "invite">("create");
+  const [formType, setFormType] = useState<"selection" | "create" | "invite">(
+    "selection"
+  );
 
   const router = useRouter();
 
@@ -94,10 +109,24 @@ export const CreateServerDialog = () => {
   const onInviteSubmit = async (values: z.infer<typeof inviteFormSchema>) => {
     try {
       // TODO: Implement invite logic here
-      console.log("Invite link:", values.inviteLink);
-      toast.success("Joined server successfully");
-      inviteForm.reset();
-      setIsOpen(false);
+      const response = await fetch("/api/servers/join", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ inviteLink: values.inviteLink }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.messages || "Joined server successfully");
+        inviteForm.reset();
+        setIsOpen(false);
+        router.push(`/servers/${values.inviteLink}`);
+      } else {
+        toast.error(data.messages || "Error joining server");
+      }
     } catch (error) {
       console.log(error);
       toast.error("Something went wrong. Please try again.");
@@ -109,67 +138,89 @@ export const CreateServerDialog = () => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (!open) {
+          setFormType("selection");
+          form.reset();
+          inviteForm.reset();
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <CirclePlus />
       </DialogTrigger>
       <DialogContent className="bg-white text-black p-0 overflow-hidden">
-        <DialogHeader className="pt-8 px-6">
+        <DialogHeader className="pt-8 px-6 relative">
+          {formType !== "selection" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute top-4 left-4 p-2"
+              onClick={() => setFormType("selection")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
           <DialogTitle className="text-2xl text-center font-bold">
-            {formType === "create" ? "Customize your server" : "Join a Server"}
+            {formType === "selection"
+              ? "Create or Join a Server"
+              : formType === "create"
+              ? "Customize your server"
+              : "Join a Server"}
           </DialogTitle>
           <DialogDescription className="text-center text-zinc-500">
-            {formType === "create"
+            {formType === "selection"
+              ? "Choose how you want to get started"
+              : formType === "create"
               ? "Give your server a personality with a name and an image. You can always change it later."
               : "Enter an invite link to join an existing server."}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Layout với label và button chuyển đổi */}
-        {/* <div className="px-6 py-4 bg-gray-50 border-b">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-zinc-600">You have invited ?</span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const newFormType = formType === "create" ? "invite" : "create";
-                setFormType(newFormType);
-                // Reset forms when switching
-                form.reset();
-                inviteForm.reset();
-              }}
+        {/* Selection view */}
+        {formType === "selection" && (
+          <div className="px-6 pb-6">
+            <div
+              className="flex items-center justify-between gap-4 py-4 px-8 hover:bg-gray-100 cursor-pointer rounded-lg mb-2"
+              onClick={() => setFormType("create")}
             >
-              {formType === "create" ? "Join a Server" : "Create Server"}
-            </Button>
+              {/* Left column with avatar/icon */}
+              <div className="flex flex-col items-center">
+                <Server />
+              </div>
+
+              <span>Create server</span>
+
+              {/* Right column with arrow */}
+              <div className="flex flex-col items-center">
+                <ChevronRight className="h-6 w-6 text-muted-foreground" />
+              </div>
+            </div>
+
+            <div
+              className="flex items-center justify-between py-4 px-8 hover:bg-gray-100 cursor-pointer rounded-lg"
+              onClick={() => setFormType("invite")}
+            >
+              {/* Left column with avatar/icon */}
+              <div className="flex flex-col items-center">
+                <Link />
+              </div>
+
+              <span>Join with invite link</span>
+
+              {/* Right column with arrow */}
+              <div className="flex flex-col items-center">
+                <ChevronRight className="h-6 w-6 text-muted-foreground" />
+              </div>
+            </div>
           </div>
-        </div> */}
-        
-        <div className="flex items-center justify-between gap-4 p-4">
-          {/* Left column with avatar/icon */}
-          <div className="flex flex-col items-center">fasdfsdaf</div>
+        )}
 
-          <span>ấdfasfasdf</span>
-
-          {/* Right column with arrow */}
-          <div className="flex flex-col items-center">
-            <ChevronRight className="h-6 w-6 text-muted-foreground" />
-          </div>
-        </div>
-        <div className="flex items-center justify-between gap-4 p-4">
-          {/* Left column with avatar/icon */}
-          <div className="flex flex-col items-center">fasdfsdaf</div>
-
-          <span>ấdfasfasdf</span>
-
-          {/* Right column with arrow */}
-          <div className="flex flex-col items-center">
-            <ChevronRight className="h-6 w-6 text-muted-foreground" />
-          </div>
-        </div>
         {/* Render form based on formType */}
-        {/* {formType === "create" ? (
+        {formType === "create" && (
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
@@ -221,11 +272,12 @@ export const CreateServerDialog = () => {
                 <Button type="submit" variant="default" disabled={isLoading}>
                   Create
                 </Button>
-                
               </DialogFooter>
             </form>
           </Form>
-        ) : (
+        )}
+
+        {formType === "invite" && (
           <Form {...inviteForm}>
             <form
               onSubmit={inviteForm.handleSubmit(onInviteSubmit)}
@@ -245,7 +297,7 @@ export const CreateServerDialog = () => {
                         <Input
                           disabled={inviteForm.formState.isSubmitting}
                           className="bg-zinc-300/50 border-0 focus:visible:ring-0 text-black focus-visible:ring-offset-0"
-                          placeholder="https://discord.gg/hTKzmak"
+                          placeholder="https://realtime-chat-thomas.vercel.app/server/abc123"
                           {...field}
                         />
                       </FormControl>
@@ -265,7 +317,7 @@ export const CreateServerDialog = () => {
               </DialogFooter>
             </form>
           </Form>
-        )} */}
+        )}
       </DialogContent>
     </Dialog>
   );

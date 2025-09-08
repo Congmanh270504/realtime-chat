@@ -2,14 +2,13 @@
 
 import {
   ArchiveX,
-  CirclePlus,
   Command,
   File,
-  Inbox,
   Send,
-  Trash2,
+  MessageCircle,
+  Users,
+  UserPlus,
 } from "lucide-react";
-import { MdPeopleAlt, MdPersonAddAlt1 } from "react-icons/md";
 
 import { Label } from "@/components/ui/label";
 import {
@@ -32,16 +31,19 @@ import { useState } from "react";
 import { FriendsWithLastMessage } from "@/types/message";
 import { useRouter } from "next/navigation";
 import { CreateServerDialog } from "../server/create-server-dialog";
+import { Servers } from "@/types/servers";
 
 export function AppSidebar({
   unseenRequestCount = 0,
   userId,
   initialFriends,
+  servers,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   unseenRequestCount?: number;
   initialFriends: FriendsWithLastMessage[];
   userId: string;
+  servers: Servers[];
 }) {
   const { setOpen } = useSidebar();
   const router = useRouter();
@@ -54,9 +56,9 @@ export function AppSidebar({
     },
     navMain: [
       {
-        title: "Inbox",
+        title: "Chats",
         url: "#",
-        icon: Inbox,
+        icon: MessageCircle,
         isActive: true,
       },
       {
@@ -81,27 +83,16 @@ export function AppSidebar({
         component: <div>Junk Component</div>,
       },
       {
-        title: "Trash",
-        url: "#",
-        icon: Trash2,
-        isActive: false,
-        component: <div>Trash Component</div>,
-      },
-      {
         title: "Friends",
         url: "/all-friends",
-        icon: MdPeopleAlt,
+        icon: Users,
         isActive: false,
-        // component: <Friends initialFriends={initialFriends} />,
       },
       {
         title: "Add Friends",
         url: "/add-friends",
-        icon: MdPersonAddAlt1,
+        icon: UserPlus,
         isActive: false,
-        // component: (
-        //   <FriendRequestItem friends={friendRequestsData} userId={userId} />
-        // ),
       },
     ],
   };
@@ -162,7 +153,7 @@ export function AppSidebar({
                     >
                       {item.title === "Add Friends" ? (
                         <div className="relative">
-                          <item.icon />
+                          <item.icon className="h-4 w-4" />
                           {unseenRequestCount > 0 && (
                             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full h-3 w-3 flex items-center justify-center font-bold">
                               {unseenRequestCount}
@@ -170,7 +161,7 @@ export function AppSidebar({
                           )}
                         </div>
                       ) : (
-                        <item.icon />
+                        <item.icon className="h-4 w-4" />
                       )}
                       <span>{item.title}</span>
                     </SidebarMenuButton>
@@ -219,7 +210,11 @@ export function AppSidebar({
         <SidebarContent>
           <SidebarGroup className="px-0">
             <SidebarGroupContent className="p-2">
-              <SidebarChatList friends={initialFriends} userId={userId} />
+              <SidebarChatList
+                friends={initialFriends}
+                userId={userId}
+                servers={servers}
+              />
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>

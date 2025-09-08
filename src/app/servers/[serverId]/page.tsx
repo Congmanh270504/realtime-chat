@@ -55,10 +55,9 @@ const Page = async ({ params }: PageProps) => {
     }
 
     const serverData = JSON.parse(data);
-    console.log(serverData);
 
     return (
-      <div>
+      <div className="p-8">
         <h1>Server: {serverData.serverName}</h1>
         <p>Server ID: {serverId}</p>
         <Image
@@ -72,7 +71,6 @@ const Page = async ({ params }: PageProps) => {
       </div>
     );
   } catch (error) {
-    console.error("Error fetching server data:", error);
     return (
       <div>
         <h1>Error</h1>

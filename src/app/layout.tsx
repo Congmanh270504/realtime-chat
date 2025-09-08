@@ -12,6 +12,7 @@ import GlobalNotificationProvider from "@/components/global-notification-provide
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
+import { getServersByUserId } from "@/lib/hepper/get-servers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -77,6 +78,7 @@ export default async function RootLayout({
       }
     })
   );
+  const servers = await getServersByUserId(user.id);
 
   return (
     <ClerkProvider dynamic>
@@ -96,6 +98,7 @@ export default async function RootLayout({
             unseenRequestCount={unseenRequests.length}
             initialFriends={friendsWithLastMessage}
             userId={user.id}
+            servers={servers}
           >
             <GlobalNotificationProvider>{children}</GlobalNotificationProvider>
           </ClientProvider>

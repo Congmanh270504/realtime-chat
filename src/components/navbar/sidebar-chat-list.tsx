@@ -9,10 +9,12 @@ import { toast } from "sonner";
 import CustomToast from "../custom-toast";
 import { useFriendsOnlineStatus } from "@/hooks/use-friends-online-status";
 import { OnlineStatusUsersSidebar } from "../online-status-users-sidebar";
+import { Servers } from "@/types/servers";
 
 interface SidebarChatListProps {
   friends: FriendsWithLastMessage[];
   userId: string;
+  servers: Servers[];
 }
 interface ExtendedMessage extends Message {
   sender: {
@@ -21,13 +23,18 @@ interface ExtendedMessage extends Message {
   };
 }
 
-const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
+const SidebarChatList = ({
+  friends,
+  userId,
+  servers,
+}: SidebarChatListProps) => {
   const router = useRouter();
   const pathName = usePathname();
   const [unseenMessages, setUnseenMessages] = useState<Message[]>([]);
   const [activeChat, setActiveChat] =
     useState<FriendsWithLastMessage[]>(friends);
   const [isCurrentUserChat, setIsCurrentUserChat] = useState<boolean>(false);
+  const [allServers, setAllServers] = useState<Servers[]>(servers);
 
   // Get online status for all friends
   const friendIds = activeChat.map((friend) => friend.id);
@@ -203,6 +210,44 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
           </Link>
         );
       })}
+      {allServers.map((server) => (
+        <Link
+          key={server.id}
+          href={`/server/${server.id}`}
+          className="bg-base-200 shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm"
+        >
+          <div className="flex items-center gap-2 w-full">
+            <div className="relative">
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarImage
+                  src={server.serverImage || "/default-server.png"}
+                  alt={server.serverName ? server.serverName : "Server image"}
+                />
+              </Avatar>
+              <div className="absolute -bottom-0.5 -right-0.5">
+                <OnlineStatusUsersSidebar status={"online"} size="sm" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1 w-full">
+              <div className="flex items-center justify-between gap-2">
+                <span>{server.serverName} </span>
+                <div className="bg-green-600 text-xs text-white px-1.5 rounded-full">
+                  Server
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-1 text-xs text-gray-500">
+                <div>
+                  <span className="text-gray-700 text-sm">You:</span>
+                  <span className="mt-0.5">fadfdas</span>
+                </div>
+                <span className="bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold mr-4">
+                  {1}
+                </span>
+              </div>
+            </div>
+          </div>
+        </Link>
+      ))}
     </div>
   );
 };
