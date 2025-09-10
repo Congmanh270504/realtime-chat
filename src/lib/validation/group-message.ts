@@ -17,6 +17,7 @@ export const groupMessageValidator = z.object({
   text: z.string(),
   timestamp: z.number(),
   sender: userDataValidator,
+  isNotification: z.boolean().optional(),
 });
 
 export const groupMessageArrayValidator = z.array(groupMessageValidator);

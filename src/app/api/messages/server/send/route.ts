@@ -1,5 +1,7 @@
 import { fetchRedis } from "@/lib/hepper/redis";
+import { pusherServer } from "@/lib/pusher";
 import { redis } from "@/lib/redis";
+import { toPusherKey } from "@/lib/utils";
 import { groupMessageValidator } from "@/lib/validation/group-message";
 import { GroupMessage } from "@/types/group-message";
 import { auth } from "@clerk/nextjs/server";
@@ -53,6 +55,38 @@ export async function POST(request: Request) {
       score: message.timestamp,
       member: JSON.stringify(message),
     });
+
+    // Trigger for server chat interface
+    pusherServer.trigger(
+      toPusherKey(`server-${serverId}-messages`),
+      "server-new-message",
+      message
+    );
+
+    // Trigger for sidebar to update last message for all server members
+    const serverMembers = (await redis.smembers(
+      `server:${serverId}:members`
+    )) as string[];
+
+    // Trigger for each member's sidebar
+    const triggerPromises = serverMembers.map((memberId) =>
+      pusherServer.trigger(
+        toPusherKey(`user:${memberId}:servers`),
+        "server-last-message",
+        {
+          serverId,
+          lastMessage: {
+            text: message.text,
+            timestamp: message.timestamp,
+            senderName: message.sender.username,
+            senderId: message.sender.id,
+          },
+        }
+      )
+    );
+
+    await Promise.all(triggerPromises);
+
     return NextResponse.json(
       { message: "Message sent successfully" },
       { status: 200 }

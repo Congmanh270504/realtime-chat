@@ -3,7 +3,7 @@ import React, { Suspense } from "react";
 import { Metadata } from "next";
 import { Servers } from "@/types/servers";
 import Loading from "@/components/chat/loading";
-import GroupChatInterface from "./group-chat-interface";
+import GroupChatLayout from "./group-chat-layout";
 import { GroupMessage } from "@/types/group-message";
 import { groupMessageArrayValidator } from "@/lib/validation/group-message";
 
@@ -76,15 +76,15 @@ const Page = async ({ params }: PageProps) => {
   const serverData = JSON.parse(data) as Servers;
   const initialMessages = (await getChatMessages(serverId)) as GroupMessage[];
 
+  // handle if not a member in server can't access
+
   return (
     <Suspense fallback={<Loading />}>
-      <div className="flex h-full bg-gray-100 overflow-hidden p-4 gap-4 min-h-0">
-        <GroupChatInterface
-          servers={serverData}
-          initialMessages={initialMessages}
-          serverId={serverId}
-        />
-      </div>
+      <GroupChatLayout
+        serverId={serverId}
+        serverData={serverData}
+        initialMessages={initialMessages}
+      />
     </Suspense>
   );
 };

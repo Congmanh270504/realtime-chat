@@ -5,4 +5,5 @@ export interface GroupMessage {
   text: string;
   timestamp: number;
   sender: UserData;
+  isNotification?: boolean;
 }

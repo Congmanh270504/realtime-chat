@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
     if (!Array.isArray(userIds) || userIds.length === 0) {
       return new Response("User IDs array required", { status: 400 });
     }
+    
     // kiểu dữ liệu <K,V>
     // {
     //   "user_123": {

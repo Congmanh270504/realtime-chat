@@ -1,11 +1,14 @@
 import { pusherServer } from "@/lib/pusher";
 import { redis } from "@/lib/redis";
 import { toPusherKey } from "@/lib/utils";
+import { GroupMessage } from "@/types/group-message";
 import { Servers } from "@/types/servers";
 import { UserData } from "@/types/user";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { promise } from "zod";
+import { v4 as uuidv4 } from "uuid";
+import { groupMessageValidator } from "@/lib/validation/group-message";
 
 export async function POST(request: Request) {
   const { userId } = await auth();
@@ -55,14 +58,32 @@ export async function POST(request: Request) {
       );
     }
 
+    const messageData: GroupMessage = {
+      id: uuidv4(),
+      text: `${userData.username} just joined the server`,
+      timestamp: Date.now(),
+      sender: userData,
+      isNotification: true,
+    };
+    const message = groupMessageValidator.parse(messageData);
+
     // Add user to server members set and server to user's servers set
     await Promise.all([
+      await redis.zadd(`servers:${inviteLink}:messages`, {
+        score: message.timestamp,
+        member: JSON.stringify(message),
+      }),
       redis.sadd(`servers:${inviteLink}:members`, userData),
       redis.sadd(`user:${userId}:servers`, inviteLink),
       pusherServer.trigger(
         toPusherKey(`user:${userId}:servers`),
         "new-server",
         { server: serverData }
+      ),
+      pusherServer.trigger(
+        toPusherKey(`server-${inviteLink}-messages`),
+        "server-new-message",
+        message
       ),
     ]);
 

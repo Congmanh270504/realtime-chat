@@ -1,3 +1,4 @@
+import { GroupMessage } from "./group-message";
 import { UserData } from "./user";
 
 export interface Servers {
@@ -7,4 +8,8 @@ export interface Servers {
   ownerId: string;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface ServerWithLatestMessage extends Servers {
+  latestMessage: GroupMessage;
 }

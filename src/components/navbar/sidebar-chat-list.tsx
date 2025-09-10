@@ -9,12 +9,11 @@ import { toast } from "sonner";
 import CustomToast from "../custom-toast";
 import { useFriendsOnlineStatus } from "@/hooks/use-friends-online-status";
 import { OnlineStatusUsersSidebar } from "../online-status-users-sidebar";
-import { Servers } from "@/types/servers";
+import { useServerContext } from "@/contexts/server-context";
 
 interface SidebarChatListProps {
   friends: FriendsWithLastMessage[];
   userId: string;
-  servers: Servers[];
 }
 interface ExtendedMessage extends Message {
   sender: {
@@ -23,19 +22,16 @@ interface ExtendedMessage extends Message {
   };
 }
 
-const SidebarChatList = ({
-  friends,
-  userId,
-  servers,
-}: SidebarChatListProps) => {
+const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
   const router = useRouter();
   const pathName = usePathname();
   const [unseenMessages, setUnseenMessages] = useState<Message[]>([]);
   const [activeChat, setActiveChat] =
     useState<FriendsWithLastMessage[]>(friends);
   const [isCurrentUserChat, setIsCurrentUserChat] = useState<boolean>(false);
-  const [allServers, setAllServers] = useState<Servers[]>(servers);
 
+  // Use server context instead of local state
+  const { servers: allServers } = useServerContext();
   // Get online status for all friends
   const friendIds = activeChat.map((friend) => friend.id);
   const { friendsStatus: friendsStatusData } =
@@ -48,25 +44,11 @@ const SidebarChatList = ({
   }, [friendsStatusData]);
 
   useEffect(() => {
-    pusherClient.subscribe(toPusherKey(`user:${userId}:servers`));
-
-    const newServerHandler = (data: { server: Servers }) => {
-      setAllServers((prev) => [...prev, data.server]);
-    };
-    pusherClient.bind("new-server", newServerHandler);
-    return () => {
-      pusherClient.unbind("new-server", newServerHandler);
-      pusherClient.unsubscribe(toPusherKey(`user:${userId}:servers`));
-    };
-  }, [userId]);
-
-  useEffect(() => {
     pusherClient.subscribe(toPusherKey(`user:${userId}:friend_online_list`));
 
     const handleFriendOnlineList = (data: {
       [userId: string]: { status: string; lastSeen: number | null };
     }) => {
-      // console.log("Received friend status update:", data);
       setFriendsStatus((prev) => {
         return { ...prev, ...data };
       });
@@ -176,7 +158,7 @@ const SidebarChatList = ({
           <Link
             key={friend.id}
             href={`${chatHrefConstructor(userId, friend.id)}`}
-            className="bg-base-200 shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm"
+            className=" shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm"
           >
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -205,8 +187,8 @@ const SidebarChatList = ({
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <span className="text-gray-700 text-sm">
+                <div className="flex items-center gap-1 text-xs ">
+                  <span className="text-sm">
                     {isCurrentUserChat || latestMessage.senderId === userId
                       ? "You: "
                       : ""}
@@ -226,8 +208,8 @@ const SidebarChatList = ({
       {allServers.map((server) => (
         <Link
           key={server.id}
-          href={`/server/${server.id}`}
-          className="bg-base-200 shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm"
+          href={`/servers/${server.id}`}
+          className="shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm"
         >
           <div className="flex items-center gap-2 w-full">
             <div className="relative">
@@ -248,14 +230,29 @@ const SidebarChatList = ({
                   Server
                 </div>
               </div>
-              <div className="flex items-center justify-between gap-1 text-xs text-gray-500">
-                <div>
-                  <span className="text-gray-700 text-sm">You:</span>
-                  <span className="mt-0.5">fadfdas</span>
+              <div className="flex items-center justify-between gap-1 text-xs ">
+                <div className="truncate max-w-[150px]">
+                  {server.latestMessage ? (
+                    <>
+                      <span className="text-sm">
+                        {server.latestMessage.sender.id === userId
+                          ? "You:"
+                          : ""}
+                      </span>
+                      <span className="mt-0.5 ml-1">
+                        {server.latestMessage.text}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-gray-500 italic">
+                      No messages yet
+                    </span>
+                  )}
                 </div>
-                <span className="bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold mr-4">
+                {/* TODO: Add unseen message count for servers */}
+                {/* <span className="bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold mr-4">
                   {1}
-                </span>
+                </span> */}
               </div>
             </div>
           </div>

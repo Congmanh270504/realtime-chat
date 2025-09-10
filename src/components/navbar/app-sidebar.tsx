@@ -31,19 +31,16 @@ import { useState } from "react";
 import { FriendsWithLastMessage } from "@/types/message";
 import { useRouter } from "next/navigation";
 import { CreateServerDialog } from "../server/create-server-dialog";
-import { Servers } from "@/types/servers";
 
 export function AppSidebar({
   unseenRequestCount = 0,
   userId,
   initialFriends,
-  servers,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   unseenRequestCount?: number;
   initialFriends: FriendsWithLastMessage[];
   userId: string;
-  servers: Servers[];
 }) {
   const { setOpen } = useSidebar();
   const router = useRouter();
@@ -210,11 +207,7 @@ export function AppSidebar({
         <SidebarContent>
           <SidebarGroup className="px-0">
             <SidebarGroupContent className="p-2">
-              <SidebarChatList
-                friends={initialFriends}
-                userId={userId}
-                servers={servers}
-              />
+              <SidebarChatList friends={initialFriends} userId={userId} />
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>

@@ -13,6 +13,9 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { getServersByUserId } from "@/lib/hepper/get-servers";
+import { ThemeProvider } from "@/components/theme-provider";
+import { GroupMessage } from "@/types/group-message";
+import { ServerWithLatestMessage } from "@/types/servers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -80,29 +83,76 @@ export default async function RootLayout({
   );
   const servers = await getServersByUserId(user.id);
 
+  // Fetch last messages for servers
+  const serversWithLastMessage: ServerWithLatestMessage[] = await Promise.all(
+    servers.map(async (server) => {
+      const [lastMessageRaw] = (await fetchRedis(
+        "zrange",
+        `servers:${server.id}:messages`,
+        -1,
+        -1
+      )) as string[];
+      console.log(
+        "💬 Last message raw for server",
+        server.id,
+        ":",
+        lastMessageRaw
+      );
+      if (!lastMessageRaw) {
+        return {
+          ...server,
+          latestMessage: {
+            id: "",
+            text: "Welcome to the server! Start chatting.",
+            timestamp: 0,
+            sender: {
+              id: "",
+              email: "",
+              firstName: "",
+              lastName: "",
+              imageUrl: "",
+              username: "",
+              createdAt: new Date().toISOString(),
+            },
+            isNotification: false,
+          } as GroupMessage,
+        };
+      } else {
+        const lastMessage = JSON.parse(lastMessageRaw) as GroupMessage;
+        return {
+          ...server,
+          latestMessage: lastMessage,
+        };
+      }
+    })
+  );
+  console.log("💬 Servers with latest messages:", serversWithLastMessage);
+
   return (
     <ClerkProvider dynamic>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          {/* <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-        </ThemeProvider> */}
           <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
-          <ClientProvider
-            unseenRequestCount={unseenRequests.length}
-            initialFriends={friendsWithLastMessage}
-            userId={user.id}
-            servers={servers}
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
           >
-            <GlobalNotificationProvider>{children}</GlobalNotificationProvider>
-          </ClientProvider>
-          <Toaster richColors position="top-center" closeButton />
+            <ClientProvider
+              unseenRequestCount={unseenRequests.length}
+              initialFriends={friendsWithLastMessage}
+              userId={user.id}
+              servers={serversWithLastMessage}
+            >
+              <GlobalNotificationProvider>
+                {children}
+              </GlobalNotificationProvider>
+            </ClientProvider>
+            <Toaster richColors position="top-center" closeButton />
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

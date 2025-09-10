@@ -43,7 +43,24 @@ export async function POST(request: Request) {
       pusherServer.trigger(
         toPusherKey(`user:${userId}:servers`),
         "new-server",
-        { server: serverData }
+        {
+          server: {
+            serverData: serverData,
+            id: serverId,
+            text: "Welcome to the server!",
+            timestamp: Date.now(),
+            sender: {
+              id: userId,
+              email: "",
+              firstName: "",
+              lastName: "",
+              imageUrl: "",
+              username: "",
+              createdAt: new Date().toISOString(),
+            },
+            isNotification: false,
+          },
+        }
       ),
     ]);
 
