@@ -60,32 +60,11 @@ export async function POST(request: Request) {
     pusherServer.trigger(
       toPusherKey(`server-${serverId}-messages`),
       "server-new-message",
-      message
+      {
+        ...message,
+        serverId: serverId,
+      }
     );
-
-    // Trigger for sidebar to update last message for all server members
-    const serverMembers = (await redis.smembers(
-      `server:${serverId}:members`
-    )) as string[];
-
-    // Trigger for each member's sidebar
-    const triggerPromises = serverMembers.map((memberId) =>
-      pusherServer.trigger(
-        toPusherKey(`user:${memberId}:servers`),
-        "server-last-message",
-        {
-          serverId,
-          lastMessage: {
-            text: message.text,
-            timestamp: message.timestamp,
-            senderName: message.sender.username,
-            senderId: message.sender.id,
-          },
-        }
-      )
-    );
-
-    await Promise.all(triggerPromises);
 
     return NextResponse.json(
       { message: "Message sent successfully" },

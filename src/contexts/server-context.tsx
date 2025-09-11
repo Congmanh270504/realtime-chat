@@ -5,8 +5,6 @@ import { pusherClient } from "@/lib/pusher";
 import { toPusherKey } from "@/lib/utils";
 import { GroupMessage } from "@/types/group-message";
 
-
-
 interface ServerContextType {
   servers: ServerWithLatestMessage[];
   updateServer: (
@@ -47,14 +45,14 @@ export function ServerProvider({
       setServers((prev) => [...prev, data.server]);
     };
 
-    const handleLatestServerMessage = (data: {
-      serverId: string;
-      lastMessage: GroupMessage;
-    }) => {
+    const handleLatestServerMessage = (
+      data: GroupMessage & { serverId: string }
+    ) => {
+      console.log("💬 ServerContext received server-last-message event:", data);
       setServers((prev) =>
         prev.map((server) =>
           server.id === data.serverId
-            ? { ...server, lastMessage: data.lastMessage }
+            ? { ...server, latestMessage: data }
             : server
         )
       );
@@ -75,7 +73,7 @@ export function ServerProvider({
     pusherClient.bind("new-server", newServerHandler);
 
     pusherClient.bind("server-renamed", renameServerHandler);
-    pusherClient.bind("server-last-message", handleLatestServerMessage);
+    pusherClient.bind("server-new-message", handleLatestServerMessage);
 
     return () => {
       servers.forEach((server) => {
@@ -99,6 +97,9 @@ export function ServerProvider({
       )
     );
   };
+  useEffect(() => {
+    console.log("Servers updated:", servers);
+  }, [servers]);
 
   const getCurrentServer = (serverId: string) => {
     return servers.find((server) => server.id === serverId);

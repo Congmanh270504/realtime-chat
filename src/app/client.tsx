@@ -20,9 +20,9 @@ import { toPusherKey } from "@/lib/utils";
 import { FriendsWithLastMessage } from "@/types/message";
 import { useOnlineStatus } from "@/hooks/use-online-status";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ServerWithLatestMessage } from "@/types/servers";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { ServerProvider } from "@/contexts/server-context";
-import { ServerWithLatestMessage } from "@/types/servers";
 interface ClientProviderProps {
   children: React.ReactNode;
   unseenRequestCount: number;

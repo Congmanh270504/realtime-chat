@@ -2,29 +2,32 @@
 
 import { useState, useCallback, useRef } from "react";
 import { Message } from "@/types/message";
+import { GroupMessage } from "@/types/group-message";
 import { messageArrayValidator } from "@/lib/validation/message";
 
-interface UseLoadMoreMessagesProps {
+interface UseLoadMoreMessagesProps<T = Message> {
   chatId: string;
-  initialMessages: Message[];
+  initialMessages: T[];
   messagesPerPage?: number;
+  isServerChat?: boolean;
 }
 
-interface UseLoadMoreMessagesReturn {
-  messages: Message[];
+interface UseLoadMoreMessagesReturn<T = Message> {
+  messages: T[];
   isLoading: boolean;
   hasMore: boolean;
   loadMore: () => Promise<void>;
-  addMessage: (message: Message) => void;
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  addMessage: (message: T) => void;
+  setMessages: React.Dispatch<React.SetStateAction<T[]>>;
 }
 
-export const useLoadMoreMessages = ({
+export const useLoadMoreMessages = <T = Message>({
   chatId,
   initialMessages,
   messagesPerPage = 10,
-}: UseLoadMoreMessagesProps): UseLoadMoreMessagesReturn => {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  isServerChat = false,
+}: UseLoadMoreMessagesProps<T>): UseLoadMoreMessagesReturn<T> => {
+  const [messages, setMessages] = useState<T[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const offsetRef = useRef(initialMessages.length);
@@ -36,16 +39,28 @@ export const useLoadMoreMessages = ({
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/messages/load-more`, {
+      const endpoint = isServerChat
+        ? `/api/messages/server/load-more`
+        : `/api/messages/load-more`;
+
+      const requestBody = isServerChat
+        ? {
+            serverId: chatId,
+            offset: offsetRef.current,
+            limit: messagesPerPage,
+          }
+        : {
+            chatId,
+            offset: offsetRef.current,
+            limit: messagesPerPage,
+          };
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          chatId,
-          offset: offsetRef.current,
-          limit: messagesPerPage,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -53,9 +68,12 @@ export const useLoadMoreMessages = ({
       }
 
       const data = await response.json();
-      const newMessages = messageArrayValidator.parse(
-        data.messages
-      ) as Message[];
+
+      // For server chat, we don't validate with messageArrayValidator
+      // since GroupMessage has different structure
+      const newMessages = isServerChat
+        ? (data.messages as T[])
+        : (messageArrayValidator.parse(data.messages) as T[]);
 
       if (newMessages.length === 0) {
         setHasMore(false);
@@ -73,9 +91,9 @@ export const useLoadMoreMessages = ({
     } finally {
       setIsLoading(false);
     }
-  }, [chatId, messagesPerPage, isLoading, hasMore]);
+  }, [chatId, messagesPerPage, isLoading, hasMore, isServerChat]);
 
-  const addMessage = useCallback((message: Message) => {
+  const addMessage = useCallback((message: T) => {
     setMessages((prev) => [...prev, message]);
     offsetRef.current += 1;
   }, []);

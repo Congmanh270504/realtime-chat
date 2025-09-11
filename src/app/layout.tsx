@@ -14,8 +14,8 @@ import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { getServersByUserId } from "@/lib/hepper/get-servers";
 import { ThemeProvider } from "@/components/theme-provider";
-import { GroupMessage } from "@/types/group-message";
 import { ServerWithLatestMessage } from "@/types/servers";
+import { GroupMessage } from "@/types/group-message";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -84,7 +84,7 @@ export default async function RootLayout({
   const servers = await getServersByUserId(user.id);
 
   // Fetch last messages for servers
-  const serversWithLastMessage: ServerWithLatestMessage[] = await Promise.all(
+  const serversWithLastMessage = await Promise.all(
     servers.map(async (server) => {
       const [lastMessageRaw] = (await fetchRedis(
         "zrange",
@@ -92,12 +92,6 @@ export default async function RootLayout({
         -1,
         -1
       )) as string[];
-      console.log(
-        "💬 Last message raw for server",
-        server.id,
-        ":",
-        lastMessageRaw
-      );
       if (!lastMessageRaw) {
         return {
           ...server,
@@ -110,24 +104,21 @@ export default async function RootLayout({
               email: "",
               firstName: "",
               lastName: "",
-              imageUrl: "",
               username: "",
+              imageUrl: "",
               createdAt: new Date().toISOString(),
             },
-            isNotification: false,
-          } as GroupMessage,
+          },
         };
       } else {
         const lastMessage = JSON.parse(lastMessageRaw) as GroupMessage;
         return {
           ...server,
           latestMessage: lastMessage,
-        };
+        } as ServerWithLatestMessage;
       }
     })
   );
-  console.log("💬 Servers with latest messages:", serversWithLastMessage);
-
   return (
     <ClerkProvider dynamic>
       <html lang="en" suppressHydrationWarning>
