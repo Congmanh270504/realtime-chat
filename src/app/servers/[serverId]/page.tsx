@@ -6,6 +6,8 @@ import Loading from "@/components/chat/loading";
 import GroupChatLayout from "./group-chat-layout";
 import { GroupMessage } from "@/types/group-message";
 import { groupMessageArrayValidator } from "@/lib/validation/group-message";
+import { auth } from "@clerk/nextjs/server";
+import { UserData } from "@/types/user";
 
 interface PageProps {
   params: Promise<{
@@ -60,7 +62,38 @@ async function getChatMessages(serverId: string) {
   }
 }
 const Page = async ({ params }: PageProps) => {
+  const { userId } = await auth();
+  if (!userId) {
+    return (
+      <div>
+        <p>Please sign in</p>
+      </div>
+    );
+  }
+
   const { serverId } = await params;
+  // check user is member of the server
+  const membersRaw = (await fetchRedis(
+    "smembers",
+    `servers:${serverId}:members`
+  )) as string[];
+  console.log("members", membersRaw);
+  if (!membersRaw) {
+    return (
+      <div>
+        <h1>Error to get server data</h1>
+      </div>
+    );
+  }
+  const members = membersRaw.map((member) => JSON.parse(member) as UserData);
+  const isMember = members.find((member) => member.id === userId);
+  if (!isMember) {
+    return (
+      <div>
+        <h1>Access Denied</h1>
+      </div>
+    );
+  }
 
   const data = await fetchRedis("get", `servers:${serverId}`);
 
@@ -84,6 +117,7 @@ const Page = async ({ params }: PageProps) => {
         serverId={serverId}
         serverData={serverData}
         initialMessages={initialMessages}
+        members={members}
       />
     </Suspense>
   );

@@ -1,5 +1,4 @@
 import { GroupMessage } from "./group-message";
-import { UserData } from "./user";
 
 export interface Servers {
   id: string;

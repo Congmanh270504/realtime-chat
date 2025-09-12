@@ -48,7 +48,6 @@ export function ServerProvider({
     const handleLatestServerMessage = (
       data: GroupMessage & { serverId: string }
     ) => {
-      console.log("💬 ServerContext received server-last-message event:", data);
       setServers((prev) =>
         prev.map((server) =>
           server.id === data.serverId
@@ -56,6 +55,9 @@ export function ServerProvider({
             : server
         )
       );
+    };
+    const handleUserOutServer = (serverId: string) => {
+      setServers((prev) => prev.filter((server) => server.id !== serverId));
     };
 
     const renameServerHandler = (data: {
@@ -71,7 +73,7 @@ export function ServerProvider({
       );
     };
     pusherClient.bind("new-server", newServerHandler);
-
+    pusherClient.bind("user-out-server", handleUserOutServer);
     pusherClient.bind("server-renamed", renameServerHandler);
     pusherClient.bind("server-new-message", handleLatestServerMessage);
 
@@ -84,6 +86,7 @@ export function ServerProvider({
       });
       pusherClient.unsubscribe(toPusherKey(`user:${userId}:servers`));
 
+      pusherClient.unbind("user-out-server", handleUserOutServer);
       pusherClient.unbind("server-new-message", handleLatestServerMessage);
       pusherClient.unbind("server-renamed", renameServerHandler);
       pusherClient.unbind("new-server", newServerHandler);

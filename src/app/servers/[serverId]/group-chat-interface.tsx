@@ -238,7 +238,7 @@ const GroupChatInterface = ({
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             )}
-
+            
             {messages.length === 0 && (
               <div className="text-center text-gray-500 mt-10">
                 No messages yet. Say hi! 👋

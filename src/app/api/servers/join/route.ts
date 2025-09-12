@@ -60,11 +60,12 @@ export async function POST(request: Request) {
 
     const messageData: GroupMessage = {
       id: uuidv4(),
-      text: `${userData.username} just joined the server`,
+      text: `${userData.username} just joined the server 🎉`,
       timestamp: Date.now(),
       sender: userData,
       isNotification: true,
     };
+
     const message = groupMessageValidator.parse(messageData);
 
     // Add user to server members set and server to user's servers set
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
       pusherServer.trigger(
         toPusherKey(`user:${userId}:servers`),
         "new-server",
-        { server: serverData }
+        { server: { ...serverData, latestMessage: messageData } }
       ),
       pusherServer.trigger(
         toPusherKey(`server-${inviteLink}-messages`),

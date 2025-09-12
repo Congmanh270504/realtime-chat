@@ -8,113 +8,6 @@ import { UserData } from "@/types/user";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-interface FriendSuggestion {
-  id: string;
-  name: string;
-  avatar?: string;
-  mutualFriends: {
-    count: number;
-    avatars: string[];
-  };
-}
-
-const friendSuggestions: FriendSuggestion[] = [
-  {
-    id: "1",
-    name: "Quí Trần",
-    mutualFriends: { count: 1, avatars: ["/diverse-group.png"] },
-  },
-  {
-    id: "2",
-    name: "Nhật Minh",
-    avatar: "/vietnamese-man-with-yellow-sign.png",
-    mutualFriends: {
-      count: 3,
-      avatars: ["/diverse-group.png", "/diverse-woman-portrait.png"],
-    },
-  },
-  {
-    id: "3",
-    name: "Thanh Tung",
-    mutualFriends: {
-      count: 2,
-      avatars: ["/diverse-group.png", "/diverse-woman-portrait.png"],
-    },
-  },
-  {
-    id: "4",
-    name: "Phan Ngọc",
-    avatar: "/vietnamese-woman-with-flowers.png",
-    mutualFriends: { count: 0, avatars: [] },
-  },
-  {
-    id: "5",
-    name: "Kiều Doãn",
-    avatar: "/woman-in-blue-jacket-outdoors.png",
-    mutualFriends: {
-      count: 2,
-      avatars: ["/diverse-group.png", "/diverse-woman-portrait.png"],
-    },
-  },
-  {
-    id: "6",
-    name: "Trần Hiếu",
-    mutualFriends: {
-      count: 2,
-      avatars: ["/diverse-group.png", "/diverse-woman-portrait.png"],
-    },
-  },
-  {
-    id: "7",
-    name: "Pho Lo",
-    avatar: "/cute-cat-with-hat.png",
-    mutualFriends: { count: 0, avatars: [] },
-  },
-  {
-    id: "8",
-    name: "Trần Tiến",
-    avatar: "/hanoi-cathedral-vietnam.png",
-    mutualFriends: { count: 0, avatars: [] },
-  },
-  {
-    id: "9",
-    name: "Nguyễn Thanh Nam",
-    avatar: "/man-in-mountains-vietnam.png",
-    mutualFriends: {
-      count: 3,
-      avatars: ["/diverse-group.png", "/diverse-woman-portrait.png"],
-    },
-  },
-  {
-    id: "10",
-    name: "Nguyễn Kim Ánh",
-    avatar: "/vietnamese-woman-portrait.png",
-    mutualFriends: { count: 0, avatars: [] },
-  },
-  {
-    id: "11",
-    name: "Đặng Thùy Mỹ Ngân",
-    avatar: "/woman-in-nature-vietnam.png",
-    mutualFriends: { count: 0, avatars: [] },
-  },
-  {
-    id: "12",
-    name: "Trương Huỳnh",
-    mutualFriends: { count: 0, avatars: [] },
-  },
-  {
-    id: "13",
-    name: "Nguyễn Nhi",
-    avatar: "/woman-taking-selfie.png",
-    mutualFriends: { count: 0, avatars: [] },
-  },
-  {
-    id: "14",
-    name: "Vy Nguyễn",
-    avatar: "/woman-in-colorful-outfit.png",
-    mutualFriends: { count: 0, avatars: [] },
-  },
-];
 interface FriendRequestsProps {
   initialFriendRequests: UserData[];
   userId: string;
@@ -216,9 +109,7 @@ export function FriendSuggestions({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-semibold text-gray-900">
-            Friend Requests
-          </h1>
+          <h1 className="text-xl font-semibold">Friend Requests</h1>
           <span className="text-sm text-red-500 mt-1">
             ({friendRequests.length})
           </span>
@@ -257,7 +148,7 @@ export function FriendSuggestions({
                 {/* Card Content */}
                 <div className="p-3 flex flex-col flex-grow">
                   {/* Name */}
-                  <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-3">
+                  <h3 className="font-semibold  text-sm leading-tight mb-3">
                     {friend.username}
                   </h3>
 

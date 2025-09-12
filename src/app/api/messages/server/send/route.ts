@@ -4,6 +4,7 @@ import { redis } from "@/lib/redis";
 import { toPusherKey } from "@/lib/utils";
 import { groupMessageValidator } from "@/lib/validation/group-message";
 import { GroupMessage } from "@/types/group-message";
+import { UserData } from "@/types/user";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
@@ -65,6 +66,24 @@ export async function POST(request: Request) {
         serverId: serverId,
       }
     );
+
+    // Trigger for sidebar notification (similar to friends)
+    const serverMembers = (await redis.smembers(
+      `servers:${serverId}:members`
+    )) as UserData[];
+
+    // Notify all server members except the sender
+    const notifications = serverMembers
+      .filter((member) => member.id !== userId)
+      .map((member) => {
+        const channel = toPusherKey(`user:${member.id}:servers`);
+        return pusherServer.trigger(channel, "new_server_message", {
+          ...message,
+          serverId: serverId,
+        });
+      });
+
+    await Promise.all(notifications);
 
     return NextResponse.json(
       { message: "Message sent successfully" },

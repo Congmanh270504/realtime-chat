@@ -8,20 +8,28 @@ import { Button } from "./ui/button";
 
 interface CustomToastProps {
   message: {
-    sender: {
+    sender?: {
       username: string;
       imageUrl: string;
     };
     text: string;
+    // For compatibility with friend messages
+    senderId?: string;
+    receiverId?: string;
   };
   chatHref: string;
   toastId: string | number;
+  // Optional: to distinguish between friend and server messages
+  isServerMessage?: boolean;
+  serverName?: string;
 }
 
 export default function CustomToast({
   message,
   chatHref,
   toastId,
+  isServerMessage = false,
+  serverName,
 }: CustomToastProps) {
   const router = useRouter();
 
@@ -34,6 +42,19 @@ export default function CustomToast({
     e.stopPropagation();
     toast.dismiss(toastId);
   };
+
+  // Get display info based on message type
+  const displayInfo = message.sender
+    ? {
+        username: message.sender.username,
+        imageUrl: message.sender.imageUrl,
+        fallback: message.sender.username?.[0]?.toUpperCase() || "U",
+      }
+    : {
+        username: "Unknown User",
+        imageUrl: "",
+        fallback: "U",
+      };
 
   return (
     <div
@@ -52,17 +73,21 @@ export default function CustomToast({
       </Button>
 
       <Avatar className="h-8 w-8 rounded-lg">
-        <AvatarImage
-          src={message.sender.imageUrl}
-          alt={message.sender.username}
-        />
+        <AvatarImage src={displayInfo.imageUrl} alt={displayInfo.username} />
         <AvatarFallback className="rounded-lg">
-          {message.sender.username?.[0]?.toUpperCase() || "U"}
+          {displayInfo.fallback}
         </AvatarFallback>
       </Avatar>
 
       <div className="flex flex-col pr-6">
-        <span className="font-semibold">{message.sender.username}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">{displayInfo.username}</span>
+          {isServerMessage && serverName && (
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+              {serverName}
+            </span>
+          )}
+        </div>
         <span className="text-gray-600 text-sm truncate max-w-xs">
           {message.text}
         </span>

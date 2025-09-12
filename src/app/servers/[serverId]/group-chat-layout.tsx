@@ -6,17 +6,20 @@ import { GroupMessage } from "@/types/group-message";
 import { Servers } from "@/types/servers";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useServerContext } from "@/contexts/server-context";
+import { UserData } from "@/types/user";
 
 interface GroupChatLayoutProps {
   serverId: string;
   initialMessages: GroupMessage[];
   serverData: Servers;
+  members: UserData[];
 }
 
 const GroupChatLayout = ({
   serverId,
   initialMessages,
   serverData,
+  members,
 }: GroupChatLayoutProps) => {
   const [showProfile, setShowProfile] = useState(true);
   const handleCloseProfile = () => setShowProfile(!showProfile);
@@ -35,6 +38,7 @@ const GroupChatLayout = ({
             serverId={serverId}
             isMobile={isMobile}
             handleCloseProfile={handleCloseProfile}
+            members={members}
           />
         ) : (
           <GroupChatInterface
@@ -57,6 +61,7 @@ const GroupChatLayout = ({
               serverData={currentServerData}
               serverId={serverId}
               isMobile={isMobile}
+              members={members}
             />
           )}
         </>

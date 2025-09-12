@@ -17,7 +17,7 @@ const Page = async () => {
 
   return (
     <Suspense fallback={<Loading />}>
-      <div className="min-h-screen bg-gray-50 p-4">
+      <div className="min-h-screen p-4">
         <div className="w-full mx-auto">
           <Friends initialFriends={initialFriends} userId={user.id} />
         </div>

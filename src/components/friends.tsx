@@ -61,7 +61,7 @@ const Friends = ({ initialFriends, userId }: FriendsProps) => {
     <div className="space-y-4 space-x-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Your friends</h1>
+        <h1 className="text-xl font-semibold ">Your friends</h1>
         <Button
           variant="link"
           className="text-blue-600 hover:text-blue-700 p-0 h-auto font-normal"
@@ -96,7 +96,7 @@ const Friends = ({ initialFriends, userId }: FriendsProps) => {
                 {/* Card Content */}
                 <div className="p-3 flex flex-col flex-grow">
                   {/* Name */}
-                  <h3 className="font-semibold text-gray-900 text-sm leading-tight mb-3">
+                  <h3 className="font-semibold text-sm leading-tight mb-3">
                     {friend.username}
                   </h3>
 

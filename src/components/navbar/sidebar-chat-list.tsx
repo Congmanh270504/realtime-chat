@@ -10,6 +10,7 @@ import CustomToast from "../custom-toast";
 import { useFriendsOnlineStatus } from "@/hooks/use-friends-online-status";
 import { OnlineStatusUsersSidebar } from "../online-status-users-sidebar";
 import { useServerContext } from "@/contexts/server-context";
+import { GroupMessage } from "@/types/group-message";
 
 interface SidebarChatListProps {
   friends: FriendsWithLastMessage[];
@@ -26,6 +27,9 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
   const router = useRouter();
   const pathName = usePathname();
   const [unseenMessages, setUnseenMessages] = useState<Message[]>([]);
+  const [unseenMessageServers, setUnseenMessageServers] = useState<
+    (GroupMessage & { serverId: string })[]
+  >([]);
   const [activeChat, setActiveChat] =
     useState<FriendsWithLastMessage[]>(friends);
   const [isCurrentUserChat, setIsCurrentUserChat] = useState<boolean>(false);
@@ -62,6 +66,50 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
       );
     };
   }, [userId]);
+
+  useEffect(() => {
+    const channelName = toPusherKey(`user:${userId}:servers`);
+
+    pusherClient.subscribe(channelName);
+
+    const serverMessageHandler = (
+      message: GroupMessage & { serverId: string }
+    ) => {
+      const shouldNotify = !pathName.includes(`/servers/${message.serverId}`);
+
+      if (!shouldNotify || userId === message.sender.id) return;
+
+      // Find server name for toast
+      const server = allServers.find((s) => s.id === message.serverId);
+      const serverName = server?.serverName || "Server";
+      console.log("🏢 Found server:", serverName);
+
+      // Add toast notification for server messages
+      toast.custom((t) => (
+        <CustomToast
+          message={{
+            sender: message.sender,
+            text: message.text,
+            senderId: message.sender.id,
+            receiverId: userId,
+          }}
+          chatHref={`/servers/${message.serverId}`}
+          toastId={t}
+          isServerMessage={true}
+          serverName={serverName}
+        />
+      ));
+
+      setUnseenMessageServers((prev) => [...prev, message]);
+    };
+
+    pusherClient.bind("new_server_message", serverMessageHandler);
+
+    return () => {
+      pusherClient.unsubscribe(channelName);
+      pusherClient.unbind("new_server_message", serverMessageHandler);
+    };
+  }, [userId, pathName, allServers]);
 
   useEffect(() => {
     pusherClient.subscribe(toPusherKey(`user:${userId}:chats`));
@@ -118,6 +166,15 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
     if (pathName.includes("chat")) {
       setUnseenMessages((prev) => {
         return prev.filter((msg) => !pathName.includes(msg.senderId));
+      });
+    }
+  }, [pathName]);
+
+  useEffect(() => {
+    if (pathName.includes("/servers/")) {
+      const serverId = pathName.split("/servers/")[1];
+      setUnseenMessageServers((prev) => {
+        return prev.filter((msg) => msg.serverId !== serverId);
       });
     }
   }, [pathName]);
@@ -205,59 +262,68 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
           </Link>
         );
       })}
-      {allServers.map((server) => (
-        <Link
-          key={server.id}
-          href={`/servers/${server.id}`}
-          className="shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm"
-        >
-          <div className="flex items-center gap-2 w-full">
-            <div className="relative">
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage
-                  src={server.serverImage || "/default-server.png"}
-                  alt={server.serverName ? server.serverName : "Server image"}
-                />
-              </Avatar>
-              <div className="absolute -bottom-0.5 -right-0.5">
-                <OnlineStatusUsersSidebar status={"online"} size="sm" />
-              </div>
-            </div>
-            <div className="flex flex-col gap-1 w-full">
-              <div className="flex items-center justify-between gap-2">
-                <span>{server.serverName} </span>
-                <div className="bg-green-600 text-xs text-white px-1.5 rounded-full">
-                  Server
+      {allServers.map((server) => {
+        const unseenServerMessagesCount = unseenMessageServers.filter(
+          (msg) => msg.serverId === server.id
+        ).length;
+        return (
+          <Link
+            key={server.id}
+            href={`/servers/${server.id}`}
+            className="shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm"
+          >
+            <div className="flex items-center gap-2 w-full">
+              <div className="relative">
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarImage
+                    src={server.serverImage || "/default-server.png"}
+                    alt={server.serverName ? server.serverName : "Server image"}
+                  />
+                </Avatar>
+                <div className="absolute -bottom-0.5 -right-0.5">
+                  <OnlineStatusUsersSidebar status={"online"} size="sm" />
                 </div>
               </div>
-              <div className="flex items-center justify-between gap-1 text-xs ">
-                <div className="truncate max-w-[150px]">
-                  {server.latestMessage ? (
-                    <>
-                      <span className="text-sm">
-                        {server.latestMessage.sender.id === userId
-                          ? "You:"
-                          : ""}
+              <div className="flex flex-col gap-1 w-full">
+                <div className="flex items-center justify-between gap-2">
+                  <span>{server.serverName} </span>
+                  <div className="bg-green-600 text-xs text-white px-1.5 rounded-full">
+                    Server
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-1 text-xs ">
+                  <div className="truncate max-w-[150px]">
+                    {server.latestMessage ? (
+                      <>
+                        <span className="text-sm">
+                          {server.latestMessage.sender.id === userId
+                            ? "You:"
+                            : server.latestMessage.sender.username
+                            ? server.latestMessage.sender.username + ":"
+                            : ""}
+                        </span>
+                        <span className="mt-0.5 ml-1">
+                          {server.latestMessage.text}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-gray-500 italic">
+                        No messages yet
                       </span>
-                      <span className="mt-0.5 ml-1">
-                        {server.latestMessage.text}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-gray-500 italic">
-                      No messages yet
+                    )}
+                  </div>
+                  {/* Unseen message count for servers */}
+                  {unseenServerMessagesCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold mr-4">
+                      {unseenServerMessagesCount}
                     </span>
                   )}
                 </div>
-                {/* TODO: Add unseen message count for servers */}
-                {/* <span className="bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold mr-4">
-                  {1}
-                </span> */}
               </div>
             </div>
-          </div>
-        </Link>
-      ))}
+          </Link>
+        );
+      })}
     </div>
   );
 };

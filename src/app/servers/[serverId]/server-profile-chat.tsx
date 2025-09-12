@@ -22,12 +22,15 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Servers } from "@/types/servers";
 import { EditServerNameDialog } from "./edit-server-name-dialog";
+import { useRouter } from "next/navigation";
+import { UserData } from "@/lib/validation/group-message";
 
 interface ServerProfileChatProps {
   serverId: string;
   serverData: Servers;
   isMobile: boolean;
   handleCloseProfile?: () => void;
+  members: UserData[];
 }
 
 export default function ServerProfileChat({
@@ -35,7 +38,9 @@ export default function ServerProfileChat({
   serverId,
   isMobile,
   handleCloseProfile,
+  members,
 }: ServerProfileChatProps) {
+  const router = useRouter();
   const [currentServerData, setCurrentServerData] = useState(serverData);
   const [expandedSections, setExpandedSections] = useState({
     serverInfo: false,
@@ -56,6 +61,27 @@ export default function ServerProfileChat({
       ...prev,
       serverName: newName,
     }));
+  };
+
+  const handleOutServer = async () => {
+    try {
+      const response = await fetch("/api/servers/out", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ serverId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to leave server");
+      }
+      router.push("/");
+
+      // Handle successful response
+    } catch (error) {
+      console.error("Error leaving server:", error);
+    }
   };
 
   return (
@@ -162,16 +188,32 @@ export default function ServerProfileChat({
 
             {expandedSections.members && (
               <div className="pl-3 space-y-2">
-                <div className="flex items-center gap-3 p-2  rounded-lg cursor-pointer">
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback>U1</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">Member 1</div>
-                    <div className="text-xs text-gray-500">Online</div>
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-3 p-2  rounded-lg cursor-pointer"
+                  >
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage
+                        src={member.imageUrl}
+                        alt={member.username}
+                      />
+                      <AvatarFallback>
+                        {member.username.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 flex justify-between">
+                      <div className="text-sm font-medium">
+                        {member.username}
+                      </div>
+                      {member.id === serverData.ownerId && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-center">
+                          Owner
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-                {/* Add more members here */}
+                ))}
               </div>
             )}
           </div>
@@ -279,6 +321,7 @@ export default function ServerProfileChat({
                 <Button
                   variant="ghost"
                   className="w-full justify-start text-sm text-red-600 h-auto p-2"
+                  onClick={handleOutServer}
                 >
                   Rời khỏi server
                 </Button>
