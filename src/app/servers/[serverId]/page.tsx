@@ -77,7 +77,6 @@ const Page = async ({ params }: PageProps) => {
     "smembers",
     `servers:${serverId}:members`
   )) as string[];
-  console.log("members", membersRaw);
   if (!membersRaw) {
     return (
       <div>

@@ -20,9 +20,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ users: [] }, { status: 200 });
     }
 
-    // Get current user's friends list
-    const friendsSet = await redis.smembers(`user:${currentUserId}:friends`);
-
     // Get all user email keys from Redis
     const emailKeys = await redis.keys("user:email:*");
 
@@ -40,18 +37,15 @@ export async function GET(request: NextRequest) {
 
     for (const emailKey of limitedKeys) {
       try {
-        const userId = await redis.get(emailKey);
-        if (userId && typeof userId === "string") {
+        const user = (await redis.get(emailKey)) as UserData;
+        console.log("userId", user);
+        if (user.id && typeof user.id === "string") {
           // Skip current user and friends
-          if (userId === currentUserId || friendsSet.includes(userId)) {
+          if (user.id === currentUserId) {
             continue;
           }
-
-          const userData = (await redis.get(
-            `user:${userId}`
-          )) as UserData | null;
-          if (userData && users.length < limit) {
-            users.push(userData);
+          if (user && users.length < limit) {
+            users.push(user);
           }
         }
       } catch (error) {

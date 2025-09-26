@@ -23,6 +23,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ServerWithLatestMessage } from "@/types/servers";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { ServerProvider } from "@/contexts/server-context";
+import AddFriendDialog from "@/components/ui/add-friend-dialog";
 interface ClientProviderProps {
   children: React.ReactNode;
   unseenRequestCount: number;
@@ -110,7 +111,10 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
                   </BreadcrumbList>
                 </Breadcrumb>
               </div>
-              <ModeToggle />
+              <div className="flex items-center gap-2">
+                <AddFriendDialog />
+                <ModeToggle />
+              </div>
             </header>
             <div className="flex-1 overflow-hidden">{children}</div>
           </SidebarInset>

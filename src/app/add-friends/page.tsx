@@ -3,7 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import React, { Suspense } from "react";
 import Loading from "./loading";
 import { redirect } from "next/navigation";
-import { getFriendRequestsByUserId } from "@/lib/hepper/get-friends";
+import { getFriendRequestsWithMutualFriends } from "@/lib/hepper/get-friends";
 
 const Page = async () => {
   const user = await currentUser();
@@ -12,14 +12,16 @@ const Page = async () => {
     return redirect("/sign-in");
   }
 
-  const friendRequests = await getFriendRequestsByUserId(user.id);
+  const friendRequestsWithMutual = await getFriendRequestsWithMutualFriends(
+    user.id
+  );
 
   return (
     <Suspense fallback={<Loading />}>
       <div className="min-h-screen p-4">
         <div className="w-full mx-auto">
           <FriendSuggestions
-            initialFriendRequests={friendRequests}
+            initialFriendRequests={friendRequestsWithMutual}
             userId={user.id}
           />
         </div>

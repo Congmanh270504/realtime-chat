@@ -100,9 +100,6 @@ export function ServerProvider({
       )
     );
   };
-  useEffect(() => {
-    console.log("Servers updated:", servers);
-  }, [servers]);
 
   const getCurrentServer = (serverId: string) => {
     return servers.find((server) => server.id === serverId);

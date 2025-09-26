@@ -1,3 +1,4 @@
+import { getFriendRequestsWithMutualFriends, getMutualFriends } from "@/lib/hepper/get-friends";
 import { fetchRedis } from "@/lib/hepper/redis";
 import { pusherServer } from "@/lib/pusher";
 import { redis } from "@/lib/redis";
@@ -16,9 +17,13 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const idToAdd = (await fetchRedis("get", `user:email:${email}`)) as string;
+    const userAddRaw = (await fetchRedis(
+      "get",
+      `user:email:${email}`
+    )) as string;
+    const userAdd = JSON.parse(userAddRaw) as UserData;
 
-    if (!idToAdd) {
+    if (!userAdd) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
@@ -27,7 +32,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    if (user.id === idToAdd) {
+    if (user.id === userAdd.id) {
       return NextResponse.json(
         { message: "You cannot add yourself as a friend" },
         { status: 400 }
@@ -37,7 +42,7 @@ export async function POST(req: Request) {
     // check if user is already added
     const isAlreadyAdded = (await fetchRedis(
       "sismember",
-      `user:${idToAdd}:incoming_friend_requests`,
+      `user:${userAdd.id}:incoming_friend_requests`,
       user.id
     )) as 0 | 1;
 
@@ -52,7 +57,7 @@ export async function POST(req: Request) {
     const isAlreadyFriends = (await fetchRedis(
       "sismember",
       `user:${user.id}:friends`,
-      idToAdd
+      userAdd.id
     )) as 0 | 1;
 
     if (isAlreadyFriends) {
@@ -62,20 +67,19 @@ export async function POST(req: Request) {
       );
     }
 
+    const friendRequestsWithMutual = await getMutualFriends(user.id, userAdd.id);
+
     await pusherServer.trigger(
-      toPusherKey(`user:${idToAdd}:incoming_friend_requests`),
+      toPusherKey(`user:${userAdd.id}:incoming_friend_requests`),
       "incoming_friend_requests",
       {
-        id: user.id,
-        email: user.emailAddresses[0]?.emailAddress,
-        imageUrl: user.imageUrl,
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      } as UserData
+        requestUser: userAdd,
+        mutualFriends: friendRequestsWithMutual,
+        mutualCount: friendRequestsWithMutual.length,
+      }
     );
 
-    await redis.sadd(`user:${idToAdd}:incoming_friend_requests`, user.id);
+    await redis.sadd(`user:${userAdd.id}:incoming_friend_requests`, user.id);
 
     return NextResponse.json(
       { message: "Add friend successfully" },

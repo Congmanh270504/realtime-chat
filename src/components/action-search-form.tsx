@@ -28,6 +28,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { UserData } from "@/types/user";
+import { useRouter } from "next/navigation";
 
 interface UserSearchResult {
   user: UserData | null;
@@ -40,11 +41,16 @@ interface UserSuggestionsResult {
 }
 
 const formSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
+  email: z.email({ message: "Invalid email address" }),
 });
 
-function ActionSearchForm() {
+interface ActionSearchFormProps {
+  onSuccess?: () => void;
+}
+
+function ActionSearchForm({ onSuccess }: ActionSearchFormProps = {}) {
   const [query, setQuery] = useState("");
+  const router = useRouter();
   const [isFocused, setIsFocused] = useState(false);
   const [selectedUser, setSelectedUser] = useState<
     UserSearchResult["user"] | null
@@ -147,6 +153,7 @@ function ActionSearchForm() {
       } else {
         toast.success(data.message);
         onReset();
+        onSuccess?.(); // Close dialog on success
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -158,6 +165,7 @@ function ActionSearchForm() {
 
   const onReset = () => {
     form.reset();
+    router.refresh();
     setQuery("");
     setSelectedUser(null);
     form.clearErrors();
@@ -200,17 +208,9 @@ function ActionSearchForm() {
   const shouldShowResults = isFocused && debouncedQuery && !selectedUser;
 
   return (
-    <div className="w-full max-w-xl mx-auto">
+    <div className="w-full">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="text-center">
-            <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight">
-              <span className="text-sm font-medium leading-none">
-                Add friends
-              </span>
-            </h1>
-          </div>
-
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             control={form.control}
             name="email"

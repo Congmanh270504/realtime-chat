@@ -52,12 +52,12 @@ export async function POST(request: Request) {
     const message = groupMessageValidator.parse(messageData);
 
     await Promise.all([
-      await redis.zadd(`servers:${serverId}:messages`, {
+      redis.zadd(`servers:${serverId}:messages`, {
         score: message.timestamp,
         member: JSON.stringify(message),
       }),
-      await redis.srem(`user:${userId}:servers`, serverId),
-      await redis.srem(`servers:${serverId}:members`, userId),
+      redis.srem(`user:${userId}:servers`, serverId),
+      redis.srem(`servers:${serverId}:members`, userId),
       pusherServer.trigger(
         toPusherKey(`server-${serverId}-messages`),
         "server-new-message",

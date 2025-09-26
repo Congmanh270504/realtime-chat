@@ -8,8 +8,14 @@ import { UserData } from "@/types/user";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+interface FriendRequestWithMutual {
+  requestUser: UserData;
+  mutualFriends: UserData[];
+  mutualCount: number;
+}
+
 interface FriendRequestsProps {
-  initialFriendRequests: UserData[];
+  initialFriendRequests: FriendRequestWithMutual[];
   userId: string;
 }
 
@@ -17,9 +23,9 @@ export function FriendSuggestions({
   initialFriendRequests,
   userId,
 }: FriendRequestsProps) {
-  const [friendRequests, setFriendRequests] = useState<UserData[]>(
-    initialFriendRequests
-  );
+  const [friendRequests, setFriendRequests] = useState<
+    FriendRequestWithMutual[]
+  >(initialFriendRequests);
 
   // fetch friend requests
   useEffect(() => {
@@ -30,12 +36,12 @@ export function FriendSuggestions({
 
     const friendRequestDeniedHandler = (data: UserData) => {
       setFriendRequests((prev) =>
-        prev.filter((friend) => friend.id !== data.id)
+        prev.filter((friend) => friend.requestUser.id !== data.id)
       );
       // setRequestCount((prev) => prev - 1);
     };
 
-    const friendRequestsAdd = (data: UserData) => {
+    const friendRequestsAdd = (data: FriendRequestWithMutual) => {
       setFriendRequests((prev) => [data, ...prev]);
     };
 
@@ -70,7 +76,7 @@ export function FriendSuggestions({
         toast.success(data.message);
 
         setFriendRequests((prev) =>
-          prev.filter((friend) => friend.id !== friendId)
+          prev.filter((friend) => friend.requestUser.id !== friendId)
         );
       } else {
         toast.error(data.message);
@@ -94,7 +100,7 @@ export function FriendSuggestions({
       if (request.status === 200) {
         toast.success(data.message);
         setFriendRequests((prev) =>
-          prev.filter((friend) => friend.id !== friendId)
+          prev.filter((friend) => friend.requestUser.id !== friendId)
         );
       } else {
         toast.error(data.message);
@@ -128,15 +134,15 @@ export function FriendSuggestions({
           return (
             <Card
               className="overflow-hidden p-0 border border-gray-200 shadow-md hover:shadow-lg transition-shadow h-full"
-              key={friend.id}
+              key={friend.requestUser.id}
             >
               <CardContent className="p-0 flex flex-col h-full">
                 {/* Profile Image */}
                 <div className="aspect-square relative">
                   <Avatar className="w-full h-full rounded-none">
                     <AvatarImage
-                      src={friend.imageUrl || "/placeholder.svg"}
-                      alt={friend.username}
+                      src={friend.requestUser.imageUrl || "/placeholder.svg"}
+                      alt={friend.requestUser.username}
                       className="object-cover"
                     />
                     <AvatarFallback className="rounded-none bg-gray-200 text-gray-600 text-4xl">
@@ -149,43 +155,45 @@ export function FriendSuggestions({
                 <div className="p-3 flex flex-col flex-grow">
                   {/* Name */}
                   <h3 className="font-semibold  text-sm leading-tight mb-3">
-                    {friend.username}
+                    {friend.requestUser.username}
                   </h3>
 
-                  {/* <div className="min-h-[20px] mb-3">
-            {friend.mutualFriends.count > 0 && (
-              <div className="flex items-center gap-1">
-                <div className="flex -space-x-1">
-                  {friend.mutualFriends.avatars
-                    .slice(0, 2)
-                    .map((avatar, index) => (
-                      <Avatar
-                        key={index}
-                        className="w-4 h-4 border border-white"
-                      >
-                        <AvatarImage src={avatar || "/placeholder.svg"} />
-                        <AvatarFallback className="bg-gray-300 text-xs"></AvatarFallback>
-                      </Avatar>
-                    ))}
-                </div>
-                <span className="text-xs text-gray-600">
-                  {friend.mutualFriends.count} bạn chung
-                </span>
-              </div>
-            )}
-          </div> */}
+                  <div className="min-h-[20px] mb-3">
+                    {friend.mutualCount > 0 && (
+                      <div className="flex items-center gap-1">
+                        <div className="flex -space-x-1">
+                          {friend.mutualFriends
+                            .slice(0, 3)
+                            .map((avatar, index) => (
+                              <Avatar
+                                key={index}
+                                className="w-4 h-4 border border-white"
+                              >
+                                <AvatarImage
+                                  src={avatar.imageUrl || "/placeholder.svg"}
+                                />
+                                <AvatarFallback className="bg-gray-300 text-xs"></AvatarFallback>
+                              </Avatar>
+                            ))}
+                        </div>
+                        <span className="text-xs text-gray-600">
+                          {friend.mutualCount} bạn chung
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="space-y-2 mt-auto">
                     <Button
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2"
-                      onClick={() => handleAcceptFriend(friend.id)}
+                      onClick={() => handleAcceptFriend(friend.requestUser.id)}
                     >
                       Xác nhận
                     </Button>
                     <Button
                       variant="secondary"
                       className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-2"
-                      onClick={() => handleDenyFriend(friend.id)}
+                      onClick={() => handleDenyFriend(friend.requestUser.id)}
                     >
                       Xóa
                     </Button>

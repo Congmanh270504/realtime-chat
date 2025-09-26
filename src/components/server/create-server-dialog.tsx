@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -296,7 +296,7 @@ export const CreateServerDialog = () => {
                         <Input
                           disabled={inviteForm.formState.isSubmitting}
                           className="bg-zinc-300/50 border-0 focus:visible:ring-0 text-black focus-visible:ring-offset-0"
-                          placeholder="https://realtime-chat-thomas.vercel.app/server/abc123"
+                          placeholder="serverId"
                           {...field}
                         />
                       </FormControl>
