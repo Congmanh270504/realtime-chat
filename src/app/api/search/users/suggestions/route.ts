@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
       const email = key.replace("user:email:", "");
       return email.toLowerCase().includes(emailPattern.toLowerCase());
     });
+    console.log("matchingEmailKeys", matchingEmailKeys);
 
     // Limit results
     const limitedKeys = matchingEmailKeys.slice(0, limit * 2); // Get more to filter out friends

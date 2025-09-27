@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { pusherClient } from "@/lib/pusher";
+import { toPusherKey } from "@/lib/utils";
 
 interface UseNicknamesReturn {
   nicknames: Record<string, string>;
@@ -14,7 +16,10 @@ interface UseNicknamesReturn {
   refreshNicknames: () => Promise<void>;
 }
 
-export const useNicknames = (chatId: string): UseNicknamesReturn => {
+export const useNicknames = (
+  chatId: string,
+  currentUserId?: string
+): UseNicknamesReturn => {
   const [nicknames, setNicknames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
@@ -85,6 +90,39 @@ export const useNicknames = (chatId: string): UseNicknamesReturn => {
   useEffect(() => {
     fetchNicknames();
   }, [fetchNicknames]);
+
+  // Subscribe to nickname changes for realtime updates
+  useEffect(() => {
+    if (!chatId || !currentUserId) return;
+
+    const currentUserChannel = toPusherKey(
+      `chat:${chatId}:nicknames:${currentUserId}`
+    );
+
+    pusherClient.subscribe(currentUserChannel);
+
+    const handleNicknameChanged = (data: {
+      userId: string;
+      nickname: string;
+    }) => {
+
+      // Update local nicknames state
+      setNicknames((prev) => {
+        const updated = {
+          ...prev,
+          [data.userId]: data.nickname,
+        };
+        return updated;
+      });
+    };
+
+    pusherClient.bind("nicknameChanged", handleNicknameChanged);
+
+    return () => {
+      pusherClient.unsubscribe(currentUserChannel);
+      pusherClient.unbind("nicknameChanged", handleNicknameChanged);
+    };
+  }, [chatId, currentUserId]);
 
   return {
     nicknames,

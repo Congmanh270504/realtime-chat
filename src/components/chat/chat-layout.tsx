@@ -30,14 +30,21 @@ const ChatLayout = ({
   const [partnerUserData, setPartnerUserData] = useState(partnerUser);
 
   useEffect(() => {
-    pusherClient.subscribe(
-      toPusherKey(`chat:${chatId}:nicknames:${transferCurrentUser.id}`)
+    const currentUserChannel = toPusherKey(
+      `chat:${chatId}:nicknames:${transferCurrentUser.id}`
     );
+    const partnerUserChannel = toPusherKey(
+      `chat:${chatId}:nicknames:${partnerUser.id}`
+    );
+
+    pusherClient.subscribe(currentUserChannel);
+    pusherClient.subscribe(partnerUserChannel);
 
     const handleNickNameChange = (data: {
       userId: string;
       nickname: string;
     }) => {
+
       if (data.userId === transferCurrentUser.id) {
         setCurrentUser((prev) => ({ ...prev, username: data.nickname }));
       } else if (data.userId === partnerUser.id) {
@@ -48,9 +55,8 @@ const ChatLayout = ({
     pusherClient.bind("nicknameChanged", handleNickNameChange);
 
     return () => {
-      pusherClient.unsubscribe(
-        toPusherKey(`chat:${chatId}:nicknames:${transferCurrentUser.id}`)
-      );
+      pusherClient.unsubscribe(currentUserChannel);
+      pusherClient.unsubscribe(partnerUserChannel);
       pusherClient.unbind("nicknameChanged", handleNickNameChange);
     };
   }, [transferCurrentUser.id, chatId, partnerUser.id]);

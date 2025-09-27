@@ -6,6 +6,7 @@ export const messageValidator = z.object({
   receiverId: z.string().optional(), // Optional vì trong API route không cần thiết
   text: z.string(),
   timestamp: z.number(),
+  isNotification: z.boolean().optional(), // Thêm trường isNotification
 });
 
 export const messageArrayValidator = z.array(messageValidator);

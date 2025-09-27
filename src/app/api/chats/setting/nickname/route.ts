@@ -1,8 +1,12 @@
+import { fetchRedis } from "@/lib/hepper/redis";
 import { pusherServer } from "@/lib/pusher";
 import { redis } from "@/lib/redis";
 import { toPusherKey } from "@/lib/utils";
+import { Message } from "@/types/message";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { nanoid } from "nanoid";
+import { messageValidator } from "@/lib/validation/message";
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,33 +36,81 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Set nickname for the specific user
-    // Key format: chat:{chatId}:nicknames
-    // Field: userId, Value: nickname
+    const friendId = user.id === userId1 ? userId2 : userId1;
+
     await redis.hset(`chat:${chatId}:nicknames`, {
       [userId]: nickname.trim(),
     });
 
-    // Trigger real-time update cho cả 2 users trong chat
-    const channelKey = toPusherKey(`chat:${chatId}:nicknames:${user.id}`);
+    const rawSender = (await fetchRedis("get", `user:${user.id}`)) as string;
+    const sender = JSON.parse(rawSender);
 
-    // Trigger cho user hiện tại (người set nickname)
-    await pusherServer.trigger(channelKey, "nicknameChanged", {
-      userId,
-      nickname: nickname.trim(),
+    const messageData: Message = {
+      id: nanoid(),
+      senderId: user.id,
+      text: `${user.username} set ${
+        user.id === userId ? "their" : userId === friendId ? "your" : "their"
+      } nickname to ${nickname.trim()}.`,
+      timestamp: Date.now(),
+      receiverId: friendId, 
+      isNotification: true,
+    };
+    const message = messageValidator.parse(messageData);
+
+    await redis.zadd(`chat:${chatId}:messages`, {
+      score: message.timestamp,
+      member: JSON.stringify(message),
     });
 
-    // Trigger cho user kia (nếu khác user hiện tại)
-    const otherUserId = userId1 === user.id ? userId2 : userId1;
-    if (otherUserId !== user.id) {
-      const otherChannelKey = toPusherKey(
-        `chat:${chatId}:nicknames:${otherUserId}`
-      );
+    // Trigger real-time update cho cả 2 users trong chat
+    const chatChannel = toPusherKey(`chat:${chatId}`);
+    const nicknameChannelKey = toPusherKey(
+      `chat:${chatId}:nicknames:${user.id}`
+    );
+    const friendKey = toPusherKey(`user:${friendId}:chats`);
+    const currentUserKey = toPusherKey(`user:${user.id}:chats`);
+    try {
+      // Trigger message notification vào chat channel để hiển thị trong chat
+      await Promise.all([
+        pusherServer.trigger(chatChannel, "incoming_message", message),
 
-      await pusherServer.trigger(otherChannelKey, "nicknameChanged", {
-        userId,
-        nickname: nickname.trim(),
-      });
+        // Trigger cho user hiện tại (người set nickname) để update UI nickname
+        pusherServer.trigger(nicknameChannelKey, "nicknameChanged", {
+          userId,
+          nickname: nickname.trim(),
+        }),
+
+        pusherServer.trigger(friendKey, "new_message", {
+          ...message,
+          sender: {
+            username: sender.username,
+            imageUrl: sender.imageUrl,
+          },
+        }),
+
+        pusherServer.trigger(currentUserKey, "new_message", {
+          ...message,
+          sender: {
+            username: sender.username,
+            imageUrl: sender.imageUrl,
+          },
+        }),
+      ]);
+
+      // Trigger cho user kia (nếu khác user hiện tại) để update UI nickname
+      const otherUserId = userId1 === user.id ? userId2 : userId1;
+      if (otherUserId !== user.id) {
+        const otherChannelKey = toPusherKey(
+          `chat:${chatId}:nicknames:${otherUserId}`
+        );
+
+        await pusherServer.trigger(otherChannelKey, "nicknameChanged", {
+          userId,
+          nickname: nickname.trim(),
+        });
+      }
+    } catch (pusherError) {
+      console.error("❌ Pusher trigger error:", pusherError);
     }
 
     return NextResponse.json({

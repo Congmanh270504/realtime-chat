@@ -31,6 +31,8 @@ import { useState } from "react";
 import { FriendsWithLastMessage } from "@/types/message";
 import { useRouter } from "next/navigation";
 import { CreateServerDialog } from "../server/create-server-dialog";
+import Link from "next/link";
+import Image from "next/image";
 
 export function AppSidebar({
   unseenRequestCount = 0,
@@ -46,38 +48,12 @@ export function AppSidebar({
   const router = useRouter();
   // Move all hooks before any conditional returns
   const data = {
-    user: {
-      name: "shadcn",
-      email: "m@example.com",
-      avatar: "/avatars/shadcn.jpg",
-    },
     navMain: [
       {
         title: "Chats",
         url: "#",
         icon: MessageCircle,
         isActive: true,
-      },
-      {
-        title: "Drafts",
-        url: "#",
-        icon: File,
-        isActive: false,
-        component: <div>Drafts Component</div>,
-      },
-      {
-        title: "Sent",
-        url: "#",
-        icon: Send,
-        isActive: false,
-        component: <div>Sent Component</div>,
-      },
-      {
-        title: "Junk",
-        url: "#",
-        icon: ArchiveX,
-        isActive: false,
-        component: <div>Junk Component</div>,
       },
       {
         title: "Friends",
@@ -113,15 +89,20 @@ export function AppSidebar({
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild className="md:h-8 md:p-0">
-                <a href="#">
-                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                    <Command className="size-4" />
+                <Link href="/">
+                  <div className="relative bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                    <Image
+                      src="/ChatGPT-Image.png"
+                      alt="Acme Inc"
+                      layout="fill"
+                      className="object-cover rounded-lg"
+                    />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">Acme Inc</span>
                     <span className="truncate text-xs">Enterprise</span>
                   </div>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

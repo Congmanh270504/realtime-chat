@@ -88,8 +88,8 @@ export async function POST(request: Request) {
             imageUrl: sender.imageUrl,
           },
         }),
-        
       ]);
+      
     } catch (pusherError) {
       console.error("Pusher trigger error:", pusherError);
       // Vẫn trả về success vì message đã được lưu

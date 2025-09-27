@@ -32,7 +32,6 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
   >([]);
   const [activeChat, setActiveChat] =
     useState<FriendsWithLastMessage[]>(friends);
-  const [isCurrentUserChat, setIsCurrentUserChat] = useState<boolean>(false);
 
   // Use server context instead of local state
   const { servers: allServers } = useServerContext();
@@ -82,8 +81,6 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
       // Find server name for toast
       const server = allServers.find((s) => s.id === message.serverId);
       const serverName = server?.serverName || "Server";
-      console.log("🏢 Found server:", serverName);
-
       // Add toast notification for server messages
       toast.custom((t) => (
         <CustomToast
@@ -134,6 +131,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
     };
 
     const chatHandlerAddLastMessage = (message: ExtendedMessage) => {
+      console.log("message: ", message);
       setActiveChat((prev) => {
         const updatedChat = prev.map((friend) => {
           if (
@@ -149,7 +147,6 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
         });
         return updatedChat;
       });
-      setIsCurrentUserChat(userId === message.senderId);
     };
     pusherClient.bind("new_message", chatHandler);
     pusherClient.bind("new_message", chatHandlerAddLastMessage);
@@ -207,7 +204,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
         const latestMessage =
           friendUnseenMessages.length > 0
             ? friendUnseenMessages[friendUnseenMessages.length - 1]
-            : friend.lastMessage;
+            : friend.lastMessage || null;
 
         const userStatus = friendsStatus[friend.id];
 
@@ -215,7 +212,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
           <Link
             key={friend.id}
             href={`${chatHrefConstructor(userId, friend.id)}`}
-            className=" shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm"
+            className="shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm dark:hover:bg-gray-700"
           >
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -246,11 +243,17 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
                 </div>
                 <div className="flex items-center gap-1 text-xs ">
                   <span className="text-sm">
-                    {isCurrentUserChat || latestMessage.senderId === userId
+                    {latestMessage && latestMessage.senderId === userId
                       ? "You: "
                       : ""}
                   </span>
-                  <span className="mt-0.5">{latestMessage.text}</span>
+                  <span className="mt-0.5">
+                    {latestMessage?.text
+                      ? latestMessage.text.length > 20
+                        ? `${latestMessage.text.slice(0, 20)}...`
+                        : latestMessage.text
+                      : "No messages yet"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -270,7 +273,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
           <Link
             key={server.id}
             href={`/servers/${server.id}`}
-            className="shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm"
+            className="shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm dark:hover:bg-gray-700"
           >
             <div className="flex items-center gap-2 w-full">
               <div className="relative">

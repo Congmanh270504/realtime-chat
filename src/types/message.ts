@@ -6,6 +6,7 @@ export interface Message {
   receiverId: string;
   text: string;
   timestamp: number;
+  isNotification?: boolean;
 }
 
 export interface Chat {

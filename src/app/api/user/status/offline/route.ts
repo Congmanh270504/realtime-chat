@@ -12,35 +12,15 @@ export async function POST(req: NextRequest) {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    let currentUserId = userId; // Default to auth userId
-
-    // Try to parse JSON body, but don't fail if it's empty
-    try {
-      const body = await req.json();
-      if (body.currentUserId) {
-        currentUserId = body.currentUserId;
-      }
-    } catch (jsonError) {
-      // JSON parsing failed, use auth userId as fallback
-      console.log("No JSON body or invalid JSON, using auth userId:", userId);
-    }
-
-    // Kiểm tra authorization: user chỉ có thể set offline cho chính mình
-    if (currentUserId !== userId) {
-      return new Response("Can only set offline status for yourself", {
-        status: 403,
-      });
-    }
-
     const now = Date.now();
 
     // Set status to offline
-    await redis.set(`user:${currentUserId}:status`, "offline");
+    await redis.set(`user:${userId}:status`, "offline");
 
     // Update heartbeat với timestamp cuối cùng (để lưu "last seen")
-    await redis.set(`user:${currentUserId}:heartbeat`, now.toString());
+    await redis.set(`user:${userId}:heartbeat`, now.toString());
 
-    const friendsList = await redis.smembers(`user:${currentUserId}:friends`);
+    const friendsList = await redis.smembers(`user:${userId}:friends`);
 
     // Trigger pusher cho tất cả friends
     const pushPromises = friendsList.map((friendId) => {
@@ -48,7 +28,7 @@ export async function POST(req: NextRequest) {
         toPusherKey(`user:${friendId}:friend_online_list`),
         "friend_online_list",
         {
-          [currentUserId]: {
+          [userId]: {
             status: "offline",
             lastSeen: now,
           },

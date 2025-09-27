@@ -54,7 +54,10 @@ export function SetTitlePartnerNameDialog({
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { setNickname: saveNickname, getNickname } = useNicknames(chatId);
+  const { setNickname: saveNickname, getNickname } = useNicknames(
+    chatId,
+    currentUser.id
+  );
 
   // React Hook Form setup
   const form = useForm<NicknameFormData>({

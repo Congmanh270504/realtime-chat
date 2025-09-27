@@ -282,116 +282,124 @@ export default function ChatInterface({
                   {timeDivider.show && timeDivider.content && (
                     <TimeDivider content={timeDivider.content} />
                   )}
-
-                  <div
-                    className={cn(
-                      "flex w-full",
-                      isCurrentUser ? "justify-end" : "justify-start"
-                    )}
-                    onMouseEnter={() => setHoveredMessageId(message.id)}
-                    onMouseLeave={() => setHoveredMessageId(null)}
-                  >
+                  {message.isNotification !== undefined &&
+                  message.isNotification === true ? (
+                    <div className="flex justify-center my-4">
+                      <div className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm">
+                        {message.text}
+                      </div>
+                    </div>
+                  ) : (
                     <div
                       className={cn(
-                        "flex gap-3 ",
-                        isCurrentUser && "flex-row-reverse",
-                        isMobile ? "w-full" : ""
+                        "flex w-full",
+                        isCurrentUser ? "justify-end" : "justify-start"
                       )}
+                      onMouseEnter={() => setHoveredMessageId(message.id)}
+                      onMouseLeave={() => setHoveredMessageId(null)}
                     >
-                      {!isCurrentUser && (
-                        <Avatar className="h-8 w-8 rounded-lg">
-                          <AvatarImage
-                            src={partnerUser.imageUrl || "/placeholder.svg"}
-                            alt={
-                              partnerUser.username
-                                ? partnerUser.username
-                                : "User image"
-                            }
-                          />
-                          <AvatarFallback className="rounded-lg">
-                            {partnerUser.username.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div className="space-y-2 flex w-full gap-2 max-w-xl">
-                        <div
-                          className={cn(
-                            "w-full",
-                            isCurrentUser ? "order-2" : "order-1"
-                          )}
-                        >
+                      <div
+                        className={cn(
+                          "flex gap-3 ",
+                          isCurrentUser && "flex-row-reverse",
+                          isMobile ? "w-full" : ""
+                        )}
+                      >
+                        {!isCurrentUser && (
+                          <Avatar className="h-8 w-8 rounded-lg">
+                            <AvatarImage
+                              src={partnerUser.imageUrl || "/placeholder.svg"}
+                              alt={
+                                partnerUser.username
+                                  ? partnerUser.username
+                                  : "User image"
+                              }
+                            />
+                            <AvatarFallback className="rounded-lg">
+                              {partnerUser.username.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div className="space-y-2 flex w-full gap-2 max-w-xl">
                           <div
                             className={cn(
-                              "flex items-center gap-2",
-                              isCurrentUser && "flex-row-reverse"
-                            )}
-                          >
-                            <span className="text-sm font-medium">
-                              {isCurrentUser ? null : partnerUser.username}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              {formatTimestamp(message.timestamp)}
-                            </span>
-                          </div>
-                          <div
-                            className={cn(
-                              "flex items-center gap-2",
-                              isCurrentUser && "flex-row-reverse"
+                              "w-full",
+                              isCurrentUser ? "order-2" : "order-1"
                             )}
                           >
                             <div
                               className={cn(
-                                "p-3 rounded-lg",
-                                !isCurrentUser
-                                  ? "bg-muted/50"
-                                  : "bg-primary text-primary-foreground"
+                                "flex items-center gap-2",
+                                isCurrentUser && "flex-row-reverse"
                               )}
                             >
-                              <p className="text-sm whitespace-pre-wrap">
-                                {message.text}
-                              </p>
+                              <span className="text-sm font-medium">
+                                {isCurrentUser ? null : partnerUser.username}
+                              </span>
+                              <span className="text-sm text-muted-foreground">
+                                {formatTimestamp(message.timestamp)}
+                              </span>
                             </div>
-                            {isMobile && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger>
-                                  <EllipsisVertical className="h-6 w-6 bg-gray-300 rounded-full p-1" />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                  <DropdownMenuItem>
-                                    Copy
-                                    <Copy className="h-4 w-4" />
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                    Delete
-                                    <Trash className="h-4 w-4 text-red-500" />
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                    Like
-                                    <ThumbsUp className="h-4 w-4" />
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                    DisLike
-                                    <ThumbsDown className="h-4 w-4" />
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
+                            <div
+                              className={cn(
+                                "flex items-center gap-2",
+                                isCurrentUser && "flex-row-reverse"
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "p-3 rounded-lg",
+                                  !isCurrentUser
+                                    ? "bg-muted/50"
+                                    : "bg-primary text-primary-foreground"
+                                )}
+                              >
+                                <p className="text-sm whitespace-pre-wrap">
+                                  {message.text}
+                                </p>
+                              </div>
+                              {isMobile && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger>
+                                    <EllipsisVertical className="h-6 w-6 bg-gray-300 rounded-full p-1" />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent>
+                                    <DropdownMenuItem>
+                                      Copy
+                                      <Copy className="h-4 w-4" />
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                      Delete
+                                      <Trash className="h-4 w-4 text-red-500" />
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                      Like
+                                      <ThumbsUp className="h-4 w-4" />
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                      DisLike
+                                      <ThumbsDown className="h-4 w-4" />
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                            </div>
                           </div>
+                          {!isMobile && (
+                            <div
+                              className={cn(
+                                "flex items-center transition-opacity duration-200",
+                                isCurrentUser ? "order-1" : "order-2",
+                                isHovered ? "opacity-100" : "opacity-0"
+                              )}
+                            >
+                              <ChatReactIcons />
+                            </div>
+                          )}
                         </div>
-                        {!isMobile && (
-                          <div
-                            className={cn(
-                              "flex items-center transition-opacity duration-200",
-                              isCurrentUser ? "order-1" : "order-2",
-                              isHovered ? "opacity-100" : "opacity-0"
-                            )}
-                          >
-                            <ChatReactIcons />
-                          </div>
-                        )}
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })}
