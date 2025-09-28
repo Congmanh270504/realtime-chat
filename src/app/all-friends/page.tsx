@@ -1,6 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import React, { Suspense } from "react";
-import Loading from "../add-friends/loading";
+import Loading from "../friend-requests/loading";
 import Friends from "@/components/friends";
 import { getFriendsByUserId } from "@/lib/hepper/get-friends";
 

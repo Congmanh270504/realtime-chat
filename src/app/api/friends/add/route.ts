@@ -1,4 +1,4 @@
-import { getFriendRequestsWithMutualFriends, getMutualFriends } from "@/lib/hepper/get-friends";
+import { getMutualFriends } from "@/lib/hepper/get-friends";
 import { fetchRedis } from "@/lib/hepper/redis";
 import { pusherServer } from "@/lib/pusher";
 import { redis } from "@/lib/redis";
@@ -67,7 +67,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const friendRequestsWithMutual = await getMutualFriends(user.id, userAdd.id);
+    const friendRequestsWithMutual = await getMutualFriends(
+      user.id,
+      userAdd.id
+    );
 
     await pusherServer.trigger(
       toPusherKey(`user:${userAdd.id}:incoming_friend_requests`),

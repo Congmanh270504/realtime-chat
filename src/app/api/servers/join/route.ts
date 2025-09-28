@@ -6,7 +6,6 @@ import { Servers } from "@/types/servers";
 import { UserData } from "@/types/user";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { promise } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { groupMessageValidator } from "@/lib/validation/group-message";
 

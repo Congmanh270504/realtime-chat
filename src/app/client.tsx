@@ -24,6 +24,7 @@ import { ServerWithLatestMessage } from "@/types/servers";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { ServerProvider } from "@/contexts/server-context";
 import AddFriendDialog from "@/components/ui/add-friend-dialog";
+import { usePathname } from "next/navigation";
 interface ClientProviderProps {
   children: React.ReactNode;
   unseenRequestCount: number;
@@ -42,6 +43,15 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
   useOnlineStatus(); // POST /api/user/status 200 in 303ms
   const [requestCount, setRequestCount] = useState(unseenRequestCount);
   const queryClient = new QueryClient();
+  const pathName = usePathname();
+  const pathArray = pathName.split("/").slice(1);
+  const breadcrumbItems = pathArray.reduce<string[]>((acc, item, index) => {
+    const url = `${acc[index - 1] || ""}/${item}`;
+    acc.push(url);
+    return acc;
+  }, []);
+  const truncate = (str: string, max = 10) =>
+    str.length > max ? `${str.slice(0, max)}...` : str;
 
   // count request add friends data
   useEffect(() => {
@@ -102,12 +112,27 @@ const ClientProvider: React.FC<ClientProviderProps> = ({
                 <Breadcrumb>
                   <BreadcrumbList>
                     <BreadcrumbItem className="hidden md:block">
-                      <BreadcrumbLink href="#">All Inboxes</BreadcrumbLink>
+                      <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
                     </BreadcrumbItem>
                     <BreadcrumbSeparator className="hidden md:block" />
-                    <BreadcrumbItem>
-                      <BreadcrumbPage>Inbox</BreadcrumbPage>
-                    </BreadcrumbItem>
+                    {breadcrumbItems.map((url, index) => (
+                      <div key={index} className="flex items-center">
+                        <BreadcrumbItem>
+                          {index !== breadcrumbItems.length - 1 ? (
+                            <BreadcrumbLink href={url} className="capitalize">
+                              {truncate(pathArray[index], 10)}
+                            </BreadcrumbLink>
+                          ) : (
+                            <BreadcrumbPage className="capitalize">
+                              {truncate(pathArray[index], 10)}
+                            </BreadcrumbPage>
+                          )}
+                        </BreadcrumbItem>
+                        {index !== pathArray.length - 1 && (
+                          <BreadcrumbSeparator className="hidden md:block" />
+                        )}
+                      </div>
+                    ))}
                   </BreadcrumbList>
                 </Breadcrumb>
               </div>

@@ -2,16 +2,6 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-// import {
-//   User,
-//   Bell,
-//   Search,
-//   ChevronDown,
-//   ChevronUp,
-//   Shield,
-//   ImageIcon,
-//   FileText,
-// } from "lucide-react";
 import { useState } from "react";
 import type { UserData } from "@/types/user";
 import { cn } from "@/lib/utils";
@@ -24,9 +14,7 @@ import {
   ImageIcon,
   FileText,
   ArrowLeft,
-  Pencil,
   Palette,
-  Captions,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@radix-ui/react-separator";

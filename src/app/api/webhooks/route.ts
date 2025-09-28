@@ -1,4 +1,3 @@
-import { fetchRedis } from "@/lib/hepper/redis";
 import { redis } from "@/lib/redis";
 import { UserData } from "@/types/user";
 import { verifyWebhook } from "@clerk/nextjs/webhooks";

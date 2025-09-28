@@ -1,12 +1,12 @@
 "use client";
 import React, { useState } from "react";
 import GroupChatInterface from "./group-chat-interface";
-import ServerProfileChat from "./server-profile-chat";
 import { GroupMessage } from "@/types/group-message";
 import { Servers } from "@/types/servers";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useServerContext } from "@/contexts/server-context";
 import { UserData } from "@/types/user";
+import ServerProfileChat from "./server-profile-chat";
 
 interface GroupChatLayoutProps {
   serverId: string;

@@ -2,7 +2,7 @@ import { fetchRedis } from "@/lib/hepper/redis";
 import { messageArrayValidator } from "@/lib/validation/message";
 import { Message } from "@/types/message";
 import { UserData } from "@/types/user";
-import { SignIn } from "@clerk/nextjs";
+import { RedirectToSignIn } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import React, { Suspense } from "react";
 import Loading from "../../../components/chat/loading";
@@ -84,7 +84,7 @@ const Page = async ({ params }: PageProps) => {
   const { chatId } = await params;
   const user = await currentUser();
   if (!user) {
-    return <SignIn />;
+    return <RedirectToSignIn />;
   }
 
   const [userId1, userId2] = chatId.split("--");
@@ -101,14 +101,18 @@ const Page = async ({ params }: PageProps) => {
 
   // Helper function để lấy display name
   const getDisplayName = (userId: string, originalUsername: string) => {
-    if(nicknames === null) return originalUsername;
-    return nicknames[userId] ;
+    if (nicknames === null) return originalUsername;
+    return nicknames[userId];
   };
 
   const partnerUserId = userId1 === user.id ? userId2 : userId1;
   const partnerUserRaw = await fetchRedis("get", `user:${partnerUserId}`);
 
   const partnerUserData = JSON.parse(partnerUserRaw) as UserData;
+
+  if (!partnerUserData) {
+    return <div>User not found.</div>;
+  }
 
   // Tạo partnerUser với nickname nếu có
   const partnerUser: UserData = {

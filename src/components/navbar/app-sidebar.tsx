@@ -51,7 +51,7 @@ export function AppSidebar({
     navMain: [
       {
         title: "Chats",
-        url: "#",
+        url: "/messages",
         icon: MessageCircle,
         isActive: true,
       },
@@ -62,8 +62,8 @@ export function AppSidebar({
         isActive: false,
       },
       {
-        title: "Add Friends",
-        url: "/add-friends",
+        title: "Friend Requests",
+        url: "/friend-requests",
         icon: UserPlus,
         isActive: false,
       },
@@ -71,6 +71,7 @@ export function AppSidebar({
   };
 
   const [activeItem, setActiveItem] = useState(data.navMain[0]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <Sidebar
@@ -178,17 +179,25 @@ export function AppSidebar({
             <div className="text-foreground text-base font-medium">
               {activeItem?.title}
             </div>
-            <Label className="flex items-center gap-2 text-sm">
+            {/* <Label className="flex items-center gap-2 text-sm">
               <span>Unreads</span>
               <Switch className="shadow-none" />
-            </Label>
+            </Label> */}
           </div>
-          <SidebarInput placeholder="Type to search..." />
+          <SidebarInput
+            placeholder="Search friends and servers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup className="px-0">
             <SidebarGroupContent className="p-2">
-              <SidebarChatList friends={initialFriends} userId={userId} />
+              <SidebarChatList
+                friends={initialFriends}
+                userId={userId}
+                searchQuery={searchQuery}
+              />
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>

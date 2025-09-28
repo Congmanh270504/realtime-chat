@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -119,10 +119,55 @@ const GroupChatInterface = ({
     };
   }, [serverId, setMessages]);
 
+  // Scroll to bottom function
+  const scrollToBottom = useCallback(
+    (behavior: "smooth" | "instant" = "smooth") => {
+      if (scrollAreaRef.current) {
+        const scrollContainer = scrollAreaRef.current.querySelector(
+          "[data-radix-scroll-area-viewport]"
+        ) as HTMLElement;
+        if (scrollContainer) {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: behavior,
+          });
+        }
+      } else if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior });
+      }
+    },
+    [scrollAreaRef]
+  );
+
+  // Auto scroll to bottom when component mounts
+  useEffect(() => {
+    // Small delay to ensure DOM is fully rendered
+    const timer = setTimeout(() => {
+      scrollToBottom("instant");
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [scrollToBottom]);
+
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    // Only auto-scroll if user is near the bottom (within 100px)
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      ) as HTMLElement;
+      if (scrollContainer) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+
+        if (isNearBottom) {
+          scrollToBottom("smooth");
+        }
+      }
+    } else {
+      scrollToBottom("smooth");
+    }
+  }, [messages, scrollAreaRef, scrollToBottom]);
 
   const handleAddMessage = async () => {
     if (!input.trim()) return;
@@ -131,10 +176,6 @@ const GroupChatInterface = ({
     const tempId = `temp-${Date.now()}`;
 
     // Optimistic update - thêm message ngay lập tức
-    // const friendId =
-    //   user?.id === chatId.split("--")[0]
-    //     ? chatId.split("--")[1]
-    //     : chatId.split("--")[0];
     const optimisticMessage: GroupMessage = {
       id: tempId,
       text: messageText,
@@ -153,6 +194,9 @@ const GroupChatInterface = ({
     setMessages((prev) => [...prev, optimisticMessage]);
     setInput("");
     setIsLoading(true);
+
+    // Scroll to bottom immediately after sending
+    setTimeout(() => scrollToBottom("smooth"), 50);
 
     try {
       const response = await fetch("/api/messages/server/send", {
@@ -238,7 +282,7 @@ const GroupChatInterface = ({
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             )}
-            
+
             {messages.length === 0 && (
               <div className="text-center text-gray-500 mt-10">
                 No messages yet. Say hi! 👋

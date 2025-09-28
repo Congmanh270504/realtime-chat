@@ -11,10 +11,13 @@ import { useFriendsOnlineStatus } from "@/hooks/use-friends-online-status";
 import { OnlineStatusUsersSidebar } from "../online-status-users-sidebar";
 import { useServerContext } from "@/contexts/server-context";
 import { GroupMessage } from "@/types/group-message";
+import { SearchX } from "lucide-react";
+import { highlightText } from "@/lib/search-utils";
 
 interface SidebarChatListProps {
   friends: FriendsWithLastMessage[];
   userId: string;
+  searchQuery?: string;
 }
 interface ExtendedMessage extends Message {
   sender: {
@@ -23,7 +26,11 @@ interface ExtendedMessage extends Message {
   };
 }
 
-const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
+const SidebarChatList = ({
+  friends,
+  userId,
+  searchQuery = "",
+}: SidebarChatListProps) => {
   const router = useRouter();
   const pathName = usePathname();
   const [unseenMessages, setUnseenMessages] = useState<Message[]>([]);
@@ -176,8 +183,20 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
     }
   }, [pathName]);
 
+  // Filter friends based on search query
+  const filteredFriends = activeChat.filter((friend) => {
+    if (!searchQuery.trim()) return true;
+    return friend.username.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  // Filter servers based on search query
+  const filteredServers = allServers.filter((server) => {
+    if (!searchQuery.trim()) return true;
+    return server.serverName.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
   // Sort friends: online first, then alphabetically
-  const sortedFriends = [...activeChat].sort((a, b) => {
+  const sortedFriends = [...filteredFriends].sort((a, b) => {
     const aStatus = friendsStatus[a.id]?.status || "offline";
     const bStatus = friendsStatus[b.id]?.status || "offline";
 
@@ -212,7 +231,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
           <Link
             key={friend.id}
             href={`${chatHrefConstructor(userId, friend.id)}`}
-            className="shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm dark:hover:bg-gray-700"
+            className="border bg-card flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm dark:hover:bg-gray-700"
           >
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -234,7 +253,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
               </div>
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
-                  <span>{friend.username}</span>
+                  <span>{highlightText(friend.username, searchQuery)}</span>
                   {userStatus?.status === "online" && (
                     <span className="text-xs text-green-600 font-medium">
                       Online
@@ -265,7 +284,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
           </Link>
         );
       })}
-      {allServers.map((server) => {
+      {filteredServers.map((server) => {
         const unseenServerMessagesCount = unseenMessageServers.filter(
           (msg) => msg.serverId === server.id
         ).length;
@@ -273,7 +292,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
           <Link
             key={server.id}
             href={`/servers/${server.id}`}
-            className="shadow-lg flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm dark:hover:bg-gray-700"
+            className="border bg-card flex items-center justify-between gap-3 p-3 hover:bg-gray-300 rounded-sm dark:hover:bg-gray-700"
           >
             <div className="flex items-center gap-2 w-full">
               <div className="relative">
@@ -289,7 +308,7 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
               </div>
               <div className="flex flex-col gap-1 w-full">
                 <div className="flex items-center justify-between gap-2">
-                  <span>{server.serverName} </span>
+                  <span>{highlightText(server.serverName, searchQuery)} </span>
                   <div className="bg-green-600 text-xs text-white px-1.5 rounded-full">
                     Server
                   </div>
@@ -327,6 +346,21 @@ const SidebarChatList = ({ friends, userId }: SidebarChatListProps) => {
           </Link>
         );
       })}
+
+      {/* Empty State for Search */}
+      {searchQuery.trim() &&
+        sortedFriends.length === 0 &&
+        filteredServers.length === 0 && (
+          <div className="text-center py-8">
+            <SearchX className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground mb-2">
+              No results found
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Try searching for a different name
+            </p>
+          </div>
+        )}
     </div>
   );
 };

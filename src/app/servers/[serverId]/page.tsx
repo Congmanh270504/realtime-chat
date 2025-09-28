@@ -3,11 +3,12 @@ import React, { Suspense } from "react";
 import { Metadata } from "next";
 import { Servers } from "@/types/servers";
 import Loading from "@/components/chat/loading";
-import GroupChatLayout from "./group-chat-layout";
+import GroupChatLayout from "../../../components/server/group-chat-layout";
 import { GroupMessage } from "@/types/group-message";
 import { groupMessageArrayValidator } from "@/lib/validation/group-message";
 import { auth } from "@clerk/nextjs/server";
 import { UserData } from "@/types/user";
+import { RedirectToSignIn } from "@clerk/nextjs";
 
 interface PageProps {
   params: Promise<{
@@ -64,11 +65,7 @@ async function getChatMessages(serverId: string) {
 const Page = async ({ params }: PageProps) => {
   const { userId } = await auth();
   if (!userId) {
-    return (
-      <div>
-        <p>Please sign in</p>
-      </div>
-    );
+    return <RedirectToSignIn />;
   }
 
   const { serverId } = await params;

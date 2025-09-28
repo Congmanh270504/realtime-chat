@@ -15,10 +15,14 @@ import ActionSearchForm from "@/components/action-search-form";
 
 interface AddFriendDialogProps {
   triggerClassName?: string;
+  text?: string;
+  size?: "sm" | "lg" | "default" | "icon";
 }
 
 export default function AddFriendDialog({
   triggerClassName,
+  text,
+  size = "sm",
 }: AddFriendDialogProps) {
   const [open, setOpen] = useState(false);
 
@@ -29,8 +33,9 @@ export default function AddFriendDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className={triggerClassName} size="sm" variant="outline">
+        <Button className={triggerClassName} size={size} variant="outline">
           <UserPlus />
+          {text}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">

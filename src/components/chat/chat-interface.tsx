@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -59,10 +59,6 @@ export default function ChatInterface({
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-  const [isSettingChanged, setIsSettingChanged] = useState({
-    nickname: false,
-    themes: false,
-  });
 
   // Sử dụng hook để load thêm tin nhắn
   const {
@@ -138,10 +134,55 @@ export default function ChatInterface({
     };
   }, [chatId, currentUser.id, partnerUser.username, changeTitle, setMessages]);
 
+  // Scroll to bottom function
+  const scrollToBottom = useCallback(
+    (behavior: "smooth" | "instant" = "smooth") => {
+      if (scrollAreaRef.current) {
+        const scrollContainer = scrollAreaRef.current.querySelector(
+          "[data-radix-scroll-area-viewport]"
+        ) as HTMLElement;
+        if (scrollContainer) {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: behavior,
+          });
+        }
+      } else if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior });
+      }
+    },
+    [scrollAreaRef]
+  );
+
+  // Auto scroll to bottom when component mounts
+  useEffect(() => {
+    // Small delay to ensure DOM is fully rendered
+    const timer = setTimeout(() => {
+      scrollToBottom("instant");
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [scrollToBottom]);
+
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    // Only auto-scroll if user is near the bottom (within 100px)
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      ) as HTMLElement;
+      if (scrollContainer) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+
+        if (isNearBottom) {
+          scrollToBottom("smooth");
+        }
+      }
+    } else {
+      scrollToBottom("smooth");
+    }
+  }, [messages, scrollAreaRef, scrollToBottom]);
 
   const handleAddMessage = async () => {
     if (!input.trim()) return;
@@ -165,6 +206,9 @@ export default function ChatInterface({
     setMessages((prev) => [...prev, optimisticMessage]);
     setInput("");
     setIsLoading(true);
+
+    // Scroll to bottom immediately after sending
+    setTimeout(() => scrollToBottom("smooth"), 50);
 
     try {
       const response = await fetch("/api/messages/send", {

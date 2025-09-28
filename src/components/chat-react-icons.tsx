@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "./ui/button";
-import { Copy, Download, ThumbsDown, ThumbsUp, Trash } from "lucide-react";
+import { Copy, ThumbsDown, ThumbsUp, Trash } from "lucide-react";
 
 const ChatReactIcons = () => {
   return (
