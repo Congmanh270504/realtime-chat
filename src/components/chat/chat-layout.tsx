@@ -44,7 +44,6 @@ const ChatLayout = ({
       userId: string;
       nickname: string;
     }) => {
-
       if (data.userId === transferCurrentUser.id) {
         setCurrentUser((prev) => ({ ...prev, username: data.nickname }));
       } else if (data.userId === partnerUser.id) {

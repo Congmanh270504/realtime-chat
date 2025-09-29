@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       toPusherKey(`user:${userAdd.id}:incoming_friend_requests`),
       "incoming_friend_requests",
       {
-        requestUser: userAdd,
+        requestUser: user,
         mutualFriends: friendRequestsWithMutual,
         mutualCount: friendRequestsWithMutual.length,
       }

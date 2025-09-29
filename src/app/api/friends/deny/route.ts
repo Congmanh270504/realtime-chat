@@ -35,8 +35,6 @@ export async function POST(req: Request) {
       JSON.parse(friend) as UserData
     );
 
-    
-
     await redis.srem(`user:${user.id}:incoming_friend_requests`, friendId);
 
     return NextResponse.json(

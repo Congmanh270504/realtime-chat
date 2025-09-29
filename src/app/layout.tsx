@@ -16,6 +16,7 @@ import { getServersByUserId } from "@/lib/hepper/get-servers";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ServerWithLatestMessage } from "@/types/servers";
 import { GroupMessage } from "@/types/group-message";
+import { redis } from "@/lib/redis";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,8 +47,7 @@ export default async function RootLayout({
       </div>
     );
   }
-  const unseenRequests = (await fetchRedis(
-    "smembers",
+  const unseenRequests = (await redis.smembers(
     `user:${user.id}:incoming_friend_requests`
   )) as string[];
 

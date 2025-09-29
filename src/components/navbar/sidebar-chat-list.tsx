@@ -117,6 +117,7 @@ const SidebarChatList = ({
 
   useEffect(() => {
     pusherClient.subscribe(toPusherKey(`user:${userId}:chats`));
+    pusherClient.subscribe(toPusherKey(`user:${userId}:unfriended`));
 
     const chatHandler = (message: ExtendedMessage) => {
       const shouldNotify =
@@ -136,9 +137,14 @@ const SidebarChatList = ({
     const newFriendHandler = (newFriend: FriendsWithLastMessage) => {
       setActiveChat((prev) => [...prev, newFriend]);
     };
+    
+    const handleUnfriend = (unfriendedId: string) => {
+      setActiveChat((prev) =>
+        prev.filter((friend) => friend.id !== unfriendedId)
+      );
+    };
 
     const chatHandlerAddLastMessage = (message: ExtendedMessage) => {
-      console.log("message: ", message);
       setActiveChat((prev) => {
         const updatedChat = prev.map((friend) => {
           if (
@@ -158,11 +164,14 @@ const SidebarChatList = ({
     pusherClient.bind("new_message", chatHandler);
     pusherClient.bind("new_message", chatHandlerAddLastMessage);
     pusherClient.bind("new_friend", newFriendHandler);
+    pusherClient.bind("friend_unfriended", handleUnfriend);
     return () => {
       pusherClient.unsubscribe(toPusherKey(`user:${userId}:chats`));
+      pusherClient.unsubscribe(toPusherKey(`user:${userId}:unfriended`));
       pusherClient.unbind("new_message", chatHandler);
       pusherClient.unbind("new_friend", newFriendHandler);
       pusherClient.unbind("new_message", chatHandlerAddLastMessage);
+      pusherClient.unbind("friend_unfriended", handleUnfriend);
     };
   }, [userId, pathName, router]);
 

@@ -130,7 +130,7 @@ export function AppSidebar({
                       isActive={activeItem?.title === item.title}
                       className="px-2.5 md:px-2"
                     >
-                      {item.title === "Add Friends" ? (
+                      {item.title === "Friend Requests" ? (
                         <div className="relative">
                           <item.icon className="h-4 w-4" />
                           {unseenRequestCount > 0 && (

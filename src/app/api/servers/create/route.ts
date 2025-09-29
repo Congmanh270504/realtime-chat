@@ -1,13 +1,15 @@
 import { pusherServer } from "@/lib/pusher";
 import { redis } from "@/lib/redis";
 import { toPusherKey } from "@/lib/utils";
-import { auth } from "@clerk/nextjs/server";
+import { ServerWithLatestMessage } from "@/types/servers";
+import { UserData } from "@/types/user";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    console.log(body);
+
     const { serverName, imageUrl } = body;
 
     if (!serverName || !imageUrl) {
@@ -16,9 +18,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    const { userId } = await auth();
 
-    if (!userId) {
+    const user = await currentUser();
+
+    if (!user) {
       return NextResponse.json({ messages: "Unauthorized" }, { status: 401 });
     }
 
@@ -30,36 +33,47 @@ export async function POST(request: Request) {
       id: serverId,
       serverName: serverName,
       serverImage: imageUrl,
-      ownerId: userId,
+      ownerId: user.id,
       createdAt: time.toString(),
       updatedAt: time.toString(),
     };
 
+    const userData = {
+      id: user.id,
+      email: user.emailAddresses[0]?.emailAddress || "",
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      imageUrl: user.imageUrl || "",
+      username: user.username || "",
+      createdAt: user.createdAt || "",
+    } as UserData;
+
     // Save server and associate with user
     await Promise.all([
       await redis.set(`servers:${serverId}`, JSON.stringify(serverData)),
-      await redis.sadd(`user:${userId}:servers`, serverId),
+      redis.sadd(`servers:${serverId}:members`, userData),
+
+      await redis.sadd(`user:${user.id}:servers`, serverId),
       // trigger pusher event to update user's server list in real-time
       pusherServer.trigger(
-        toPusherKey(`user:${userId}:servers`),
+        toPusherKey(`user:${user.id}:servers`),
         "new-server",
         {
           server: {
-            serverData: serverData,
             id: serverId,
-            text: "Welcome to the server!",
-            timestamp: Date.now(),
-            sender: {
-              id: userId,
-              email: "",
-              firstName: "",
-              lastName: "",
-              imageUrl: "",
-              username: "",
-              createdAt: new Date().toISOString(),
+            serverName: serverData.serverName,
+            serverImage: serverData.serverImage,
+            ownerId: serverData.ownerId,
+            createdAt: parseInt(serverData.createdAt),
+            updatedAt: parseInt(serverData.updatedAt),
+            latestMessage: {
+              id: "",
+              text: "Welcome to the server! Start chatting.",
+              timestamp: 0,
+              sender: userData,
+              isNotification: false,
             },
-            isNotification: false,
-          },
+          } as ServerWithLatestMessage,
         }
       ),
     ]);

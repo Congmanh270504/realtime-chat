@@ -102,7 +102,7 @@ const Page = async ({ params }: PageProps) => {
   // Helper function để lấy display name
   const getDisplayName = (userId: string, originalUsername: string) => {
     if (nicknames === null) return originalUsername;
-    return nicknames[userId];
+    return nicknames[userId] || originalUsername;
   };
 
   const partnerUserId = userId1 === user.id ? userId2 : userId1;

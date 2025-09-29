@@ -1,11 +1,11 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 const f = createUploadthing();
 
 const handleAuth = async () => {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized ");
-  return { userId };
+  const user = await currentUser();
+  if (!user) throw new Error("Unauthorized");
+  return { userId: user.id };
 };
 // FileRouter for your app, can contain multiple FileRoutes
 export const ourFileRouter = {

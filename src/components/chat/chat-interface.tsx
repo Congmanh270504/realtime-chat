@@ -59,7 +59,6 @@ export default function ChatInterface({
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-
   // Sử dụng hook để load thêm tin nhắn
   const {
     messages,

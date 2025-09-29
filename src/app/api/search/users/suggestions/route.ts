@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
       const email = key.replace("user:email:", "");
       return email.toLowerCase().includes(emailPattern.toLowerCase());
     });
-    console.log("matchingEmailKeys", matchingEmailKeys);
 
     // Limit results
     const limitedKeys = matchingEmailKeys.slice(0, limit * 2); // Get more to filter out friends
@@ -39,7 +38,6 @@ export async function GET(request: NextRequest) {
     for (const emailKey of limitedKeys) {
       try {
         const user = (await redis.get(emailKey)) as UserData;
-        console.log("userId", user);
         if (user.id && typeof user.id === "string") {
           // Skip current user and friends
           if (user.id === currentUserId) {

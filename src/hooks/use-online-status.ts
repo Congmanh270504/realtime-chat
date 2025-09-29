@@ -52,8 +52,6 @@ export function useOnlineStatus() {
         });
         navigator.sendBeacon("/api/user/status/offline", blob);
 
-        // Fallback for debugging
-        console.log("User going offline - sendBeacon sent");
       };
 
       document.addEventListener("visibilitychange", handleVisibilityChange);
