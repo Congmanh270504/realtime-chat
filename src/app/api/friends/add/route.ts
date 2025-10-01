@@ -71,18 +71,19 @@ export async function POST(req: Request) {
       user.id,
       userAdd.id
     );
-
-    await pusherServer.trigger(
-      toPusherKey(`user:${userAdd.id}:incoming_friend_requests`),
-      "incoming_friend_requests",
-      {
-        requestUser: user,
-        mutualFriends: friendRequestsWithMutual,
-        mutualCount: friendRequestsWithMutual.length,
-      }
-    );
-
-    await redis.sadd(`user:${userAdd.id}:incoming_friend_requests`, user.id);
+    
+    await Promise.all([
+      await pusherServer.trigger(
+        toPusherKey(`user:${userAdd.id}:incoming_friend_requests`),
+        "incoming_friend_requests",
+        {
+          requestUser: user,
+          mutualFriends: friendRequestsWithMutual,
+          mutualCount: friendRequestsWithMutual.length,
+        }
+      ),
+      await redis.sadd(`user:${userAdd.id}:incoming_friend_requests`, user.id),
+    ]);
 
     return NextResponse.json(
       { message: "Add friend successfully" },

@@ -11,10 +11,11 @@ export async function POST() {
     const now = Date.now();
 
     // Update heartbeat with 1 hour expiry
-    await redis.setex(`user:${userId}:heartbeat`, 3600, now.toString());
-
-    // Ensure user is marked as online
-    await redis.set(`user:${userId}:status`, "online");
+    await Promise.all([
+      redis.setex(`user:${userId}:heartbeat`, 3600, now.toString()),
+      // Ensure user is marked as online
+      redis.set(`user:${userId}:status`, "online"),
+    ]);
 
     return new Response("Heartbeat updated", { status: 200 });
   } catch (error) {

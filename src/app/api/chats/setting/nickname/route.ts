@@ -38,10 +38,6 @@ export async function POST(req: NextRequest) {
 
     const friendId = user.id === userId1 ? userId2 : userId1;
 
-    await redis.hset(`chat:${chatId}:nicknames`, {
-      [userId]: nickname.trim(),
-    });
-
     const rawSender = (await fetchRedis("get", `user:${user.id}`)) as string;
     const sender = JSON.parse(rawSender);
 
@@ -52,15 +48,10 @@ export async function POST(req: NextRequest) {
         user.id === userId ? "their" : userId === friendId ? "your" : "their"
       } nickname to ${nickname.trim()}.`,
       timestamp: Date.now(),
-      receiverId: friendId, 
+      receiverId: friendId,
       isNotification: true,
     };
     const message = messageValidator.parse(messageData);
-
-    await redis.zadd(`chat:${chatId}:messages`, {
-      score: message.timestamp,
-      member: JSON.stringify(message),
-    });
 
     // Trigger real-time update cho cả 2 users trong chat
     const chatChannel = toPusherKey(`chat:${chatId}`);
@@ -72,6 +63,14 @@ export async function POST(req: NextRequest) {
     try {
       // Trigger message notification vào chat channel để hiển thị trong chat
       await Promise.all([
+        redis.hset(`chat:${chatId}:nicknames`, {
+          [userId]: nickname.trim(),
+        }),
+        redis.zadd(`chat:${chatId}:messages`, {
+          score: message.timestamp,
+          member: JSON.stringify(message),
+        }),
+
         pusherServer.trigger(chatChannel, "incoming_message", message),
 
         // Trigger cho user hiện tại (người set nickname) để update UI nickname

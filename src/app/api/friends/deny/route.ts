@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     );
 
     await redis.srem(`user:${user.id}:incoming_friend_requests`, friendId);
-
+    
     return NextResponse.json(
       { message: "Friend request denied" },
       { status: 200 }

@@ -52,21 +52,6 @@ export async function POST(request: Request) {
     };
     const message = groupMessageValidator.parse(messageData);
 
-    await redis.zadd(`servers:${serverId}:messages`, {
-      score: message.timestamp,
-      member: JSON.stringify(message),
-    });
-
-    // Trigger for server chat interface
-    pusherServer.trigger(
-      toPusherKey(`server-${serverId}-messages`),
-      "server-new-message",
-      {
-        ...message,
-        serverId: serverId,
-      }
-    );
-
     // Trigger for sidebar notification (similar to friends)
     const serverMembers = (await redis.smembers(
       `servers:${serverId}:members`
@@ -83,7 +68,22 @@ export async function POST(request: Request) {
         });
       });
 
-    await Promise.all(notifications);
+    await Promise.all([
+      notifications,
+      redis.zadd(`servers:${serverId}:messages`, {
+        score: message.timestamp,
+        member: JSON.stringify(message),
+      }),
+      // Trigger for server chat interface
+      pusherServer.trigger(
+        toPusherKey(`server-${serverId}-messages`),
+        "server-new-message",
+        {
+          ...message,
+          serverId: serverId,
+        }
+      )
+    ]);
 
     return NextResponse.json(
       { message: "Message sent successfully" },

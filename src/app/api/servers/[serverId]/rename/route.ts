@@ -104,11 +104,6 @@ export async function POST(
     };
     const message = groupMessageValidator.parse(messageData);
 
-    await redis.zadd(`servers:${serverId}:messages`, {
-      score: message.timestamp,
-      member: JSON.stringify(message),
-    });
-
     // Update server data with new name and updated timestamp
     const updatedServer: ServerData = {
       ...currentServer,
@@ -116,27 +111,28 @@ export async function POST(
       updatedAt: Date.now().toString(),
     };
 
-    // const members = (await fetchRedis(
-    //   "smembers",
-    //   `server:${serverId}:members`
-    // )) as string[];
+    await Promise.all([
+      redis.zadd(`servers:${serverId}:messages`, {
+        score: message.timestamp,
+        member: JSON.stringify(message),
+      }),
+      // Save updated server data back to Redis using redis instance
+      await redis.set(`servers:${serverId}`, JSON.stringify(updatedServer)),
 
-    // Save updated server data back to Redis using redis instance
-    await redis.set(`servers:${serverId}`, JSON.stringify(updatedServer));
-
-    await pusherServer.trigger(
-      toPusherKey(`server-${serverId}`),
-      "server-renamed",
-      {
-        serverId,
-        newName,
-      }
-    );
-    await pusherServer.trigger(
-      toPusherKey(`server-${serverId}-messages`),
-      "server-new-message",
-      message
-    );
+      await pusherServer.trigger(
+        toPusherKey(`server-${serverId}`),
+        "server-renamed",
+        {
+          serverId,
+          newName,
+        }
+      ),
+      await pusherServer.trigger(
+        toPusherKey(`server-${serverId}-messages`),
+        "server-new-message",
+        message
+      ),
+    ]);
 
     return NextResponse.json(
       {

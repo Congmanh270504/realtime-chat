@@ -53,22 +53,21 @@ export async function POST(request: Request) {
       senderId: user.id,
       text,
       timestamp: Date.now(),
-      receiverId: friendId
+      receiverId: friendId,
     };
     const message = messageValidator.parse(messageData);
 
     try {
-      // Lưu message vào database trước
-      await redis.zadd(`chat:${chatId}:messages`, {
-        score: message.timestamp,
-        member: JSON.stringify(message),
-      });
-
-      // Sau đó mới trigger Pusher events
       const chatKey = toPusherKey(`chat:${chatId}`);
       const friendKey = toPusherKey(`user:${friendId}:chats`);
       const currentUserKey = toPusherKey(`user:${user.id}:chats`);
       await Promise.all([
+        // Lưu message vào database 
+        redis.zadd(`chat:${chatId}:messages`, {
+          score: message.timestamp,
+          member: JSON.stringify(message),
+        }),
+        
         // notify all clients in the chat
         await pusherServer.trigger(chatKey, "incoming_message", message),
 
@@ -89,7 +88,6 @@ export async function POST(request: Request) {
           },
         }),
       ]);
-      
     } catch (pusherError) {
       console.error("Pusher trigger error:", pusherError);
       // Vẫn trả về success vì message đã được lưu
