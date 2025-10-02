@@ -74,12 +74,6 @@ export default function GlobalNotificationProvider({
         // Nếu notification đang active và title mới không phải notification
         if (notificationActiveRef.current && !newTitle.includes("💬")) {
           // Ignore việc set title mới, giữ nguyên notification title
-          console.log(
-            "Blocked title change from:",
-            newTitle,
-            "to keep:",
-            notificationTitle
-          );
           return;
         }
         // Nếu không phải trường hợp trên, set title bình thường
