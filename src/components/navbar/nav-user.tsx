@@ -29,6 +29,7 @@ import { SignOutButton, useUser } from "@clerk/nextjs";
 import ClientOnly from "../client-only";
 import { OnlineStatusIndicator } from "../online-status-partner";
 import { OnlineStatusUsersSidebar } from "../online-status-users-sidebar";
+import Link from "next/link";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
@@ -88,13 +89,6 @@ export function NavUser() {
               >
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    {/* <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage
-                        src={user.imageUrl}
-                        alt={user.username ? user.username : "User image"}
-                      />
-                      <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                    </Avatar> */}
                     <div className="relative">
                       <Avatar className="h-8 w-8 rounded-lg">
                         <AvatarImage
@@ -129,8 +123,13 @@ export function NavUser() {
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuItem>
-                    <BadgeCheck />
-                    Account
+                    <Link
+                      href="/user-profile"
+                      className="flex items-center gap-1"
+                    >
+                      <BadgeCheck />
+                      Account
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <CreditCard />
